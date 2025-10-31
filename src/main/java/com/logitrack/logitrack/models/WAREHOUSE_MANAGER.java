@@ -18,13 +18,6 @@ import java.time.LocalDateTime;
 @Table(name = "warehouse_managers")
 @Data
 @SuperBuilder
-@NoArgsConstructor
 @AllArgsConstructor
 public class WAREHOUSE_MANAGER extends User {
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
 }
