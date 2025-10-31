@@ -2,15 +2,15 @@ package com.logitrack.logitrack.controllers;
 
 import com.logitrack.logitrack.dtos.User.UserDTO;
 import com.logitrack.logitrack.dtos.User.UserResponseDTO;
+
 import com.logitrack.logitrack.services.AuthService;
+
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +34,13 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(String email, String password) {
-        return authService.login(email, password);
+    public String login(@RequestBody Map<String, String> requestBody, HttpSession session) {
+        String email = requestBody.get("email");
+        String password = requestBody.get("password");
+
+        authService.login(email, password,session);
+
+        return "Login successful. Session ID: " + session.getId()+" "+ session.getAttribute(session.getId());
     }
+
 }
