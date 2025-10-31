@@ -33,5 +33,4 @@ public class UserDTO {
 
     private String updatedAt;
 
-    private String test;
 }
