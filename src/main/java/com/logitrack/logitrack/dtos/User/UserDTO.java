@@ -1,9 +1,7 @@
 package com.logitrack.logitrack.dtos.User;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import com.logitrack.logitrack.models.ENUM.Role;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 @Data
@@ -18,8 +16,8 @@ public class UserDTO {
     @Email(message = "Email should be valid")
     private String email;
 
-    @NotBlank(message = "Role is required")
-    private String role;
+    @NotNull(message = "Role is required")
+    private Role role;
     @NotBlank(message = "Password is required")
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
              message = "Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character")
@@ -27,7 +25,7 @@ public class UserDTO {
 
 
 
-    private Boolean active;
+    private Boolean active = true;
 
     private String createdAt;
 

@@ -43,7 +43,11 @@ public class AuthService {
             throw new IllegalArgumentException("Email already in use");
         }
         userDTO.setPasswordHash(PaswordUtil.hashPassword(userDTO.getPasswordHash()));
-        User user = userMapper.toEntity(userDTO);
+        User user = switch (userDTO.getRole()){
+            case ADMIN -> userMapper.toAdminEntity(userDTO);
+            case CLIENT -> userMapper.toClientEntity(userDTO);
+            case  WAREHOUSE_MANAGER-> userMapper.toWarehouseManagerEntity(userDTO);
+        };
         userRepository.save(user);
         return userMapper.toResponseDTO(user);
     }

@@ -1,6 +1,6 @@
 package com.logitrack.logitrack.mapper;
 
-import com.logitrack.logitrack.dtos.PurchaseOrderLineDTO;
+import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderLine.PurchaseOrderLineDTO;
 import com.logitrack.logitrack.models.PurchaseOrderLine;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;

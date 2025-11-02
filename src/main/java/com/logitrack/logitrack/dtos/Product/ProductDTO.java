@@ -1,4 +1,4 @@
-package com.logitrack.logitrack.dtos;
+package com.logitrack.logitrack.dtos.Product;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,12 +7,6 @@ import lombok.Data;
 
 @Data
 public class ProductDTO {
-    private String id;
-
-
-    @NotBlank(message = "SKU is required")
-    @Size(max = 50, message = "SKU must be at most 50 characters")
-    private String sku;
 
     @NotBlank(message = "Name is required")
     @Size(max = 255, message = "Name must be at most 255 characters")
@@ -23,7 +17,4 @@ public class ProductDTO {
     @NotNull(message = "Active status is required")
     private Boolean active = true;
 
-    private String createdAt;
-
-    private String updatedAt;
 }

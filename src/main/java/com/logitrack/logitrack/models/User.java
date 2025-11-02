@@ -41,6 +41,7 @@ public class User {
     @Column(nullable = false)
     protected Role role;
 
+    @Column(nullable = false)
     protected Boolean active = true;
 
     @CreatedDate

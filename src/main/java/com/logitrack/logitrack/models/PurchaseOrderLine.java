@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -36,7 +37,7 @@ public class PurchaseOrderLine {
 
     @Column(nullable = false)
     private Integer quantity;
-
+    @Column(columnDefinition = "Minimum 0.00")
     private BigDecimal unitPrice;
 
     @CreatedDate
@@ -45,4 +46,7 @@ public class PurchaseOrderLine {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @LastModifiedBy
+    private String lastModifiedBy;
 }
