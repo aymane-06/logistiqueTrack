@@ -37,7 +37,7 @@ public class PurchaseOrderLine {
 
     @Column(nullable = false)
     private Integer quantity;
-    @Column(columnDefinition = "Minimum 0.00")
+    @Column(columnDefinition = "DECIMAL(10,2) CHECK (unit_price >= 0.00)")
     private BigDecimal unitPrice;
 
     @CreatedDate

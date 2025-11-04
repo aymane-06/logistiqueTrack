@@ -20,9 +20,9 @@ import java.util.List;
 @NoArgsConstructor
 public class WAREHOUSE_MANAGER extends User {
 
-    @OneToOne
+    @OneToMany
     @JoinColumn(name = "warehouse_id")
-    private Warehouse warehouse;
+    private List<Warehouse> warehouses;
 
     @OneToMany
     private List<PurchaseOrder> purchaseOrders;

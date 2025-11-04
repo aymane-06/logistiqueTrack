@@ -27,13 +27,6 @@ public class InventoryMovement {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
-
-    @ManyToOne
-    @JoinColumn(name = "warehouse_id", nullable = false)
-    private Warehouse warehouse;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -48,6 +41,10 @@ public class InventoryMovement {
     private String referenceDocument;
 
     private String description;
+
+    @ManyToOne
+    @JoinColumn(name = "inventory_id", nullable = false)
+    private Inventory inventory;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

@@ -6,6 +6,7 @@ import com.logitrack.logitrack.models.*;
 import com.logitrack.logitrack.repositories.ProductRepository;
 import com.logitrack.logitrack.repositories.SupplierRepository;
 import com.logitrack.logitrack.repositories.WarehouseManagerRepository;
+import com.logitrack.logitrack.repositories.WarehouseRepository;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,8 @@ public abstract class PurchaseOrderMapper {
     protected  WarehouseManagerRepository warehouseManagerRepository;
     @Autowired
     protected  ProductRepository productRepository;
+    @Autowired
+    protected WarehouseRepository warehouseRepository;
 
 
     public abstract PurchaseOrderDTO toDTO(PurchaseOrder purchaseOrder);
@@ -30,12 +33,12 @@ public abstract class PurchaseOrderMapper {
         }
         Supplier supplier = supplierRepository.findById(purchaseOrderDTO.getSupplierId())
                 .orElseThrow(() -> new IllegalArgumentException("Supplier with id " + purchaseOrderDTO.getSupplierId() + " not found."));
-        WAREHOUSE_MANAGER warehouseManager = warehouseManagerRepository.findById(purchaseOrderDTO.getWarehouseManagerId())
-                .orElseThrow(() -> new IllegalArgumentException("Warehouse Manager with id " + purchaseOrderDTO.getWarehouseManagerId() + " not found."));
+
+        Warehouse warehouse = warehouseRepository.findById(purchaseOrderDTO.getWarehouseId()).orElseThrow(()-> new IllegalArgumentException("Warehouse with id " + purchaseOrderDTO.getWarehouseId() + " not found."));
 
        PurchaseOrder purchaseOrder = PurchaseOrder.builder()
                .supplier(supplier)
-               .warehouseManager(warehouseManager)
+               .warehouse(warehouse)
                .expectedDelivery(purchaseOrderDTO.getExpectedDelivery())
                .status(purchaseOrderDTO.getStatus())
                .build();
@@ -51,7 +54,40 @@ public abstract class PurchaseOrderMapper {
          });
         return purchaseOrder;
     }
-    public abstract void updatePurchaseOrderFromDto(PurchaseOrderDTO dto, @MappingTarget PurchaseOrder entity);
+    public void updatePurchaseOrderFromDto(PurchaseOrderDTO dto, @MappingTarget PurchaseOrder entity){
+        if ( dto == null ) {
+            return;
+        }
+        if (dto.getExpectedDelivery() != null) {
+            entity.setExpectedDelivery( dto.getExpectedDelivery() );
+        }
+        if (dto.getStatus() != null) {
+            entity.setStatus( dto.getStatus() );
+        }
+        if(dto.getSupplierId()!=null){
+            Supplier supplier = supplierRepository.findById(dto.getSupplierId())
+                    .orElseThrow(() -> new IllegalArgumentException("Supplier with id " + dto.getSupplierId() + " not found."));
+            entity.setSupplier(supplier);
+        }
+        if(dto.getWarehouseId()!=null){
+            Warehouse warehouse = warehouseRepository.findById(dto.getWarehouseId()).orElseThrow(()-> new IllegalArgumentException("Warehouse with id " + dto.getWarehouseId() + " not found."));
+
+            entity.setWarehouse(warehouse);
+        }
+        if(dto.getLines()!=null) {
+            entity.getLines().clear();
+            dto.getLines().forEach(l -> {
+                Product product = productRepository.findByIdAndActive(l.getProductId(), true).orElseThrow(() -> new IllegalArgumentException("Product with id " + l.getProductId() + " not found."));
+                PurchaseOrderLine line = PurchaseOrderLine.builder()
+                        .product(product)
+                        .quantity(l.getQuantity())
+                        .unitPrice(l.getUnitPrice())
+                        .purchaseOrder(entity)
+                        .build();
+                entity.getLines().add(line);
+            });
+        }
+    }
     public abstract PurchaseOrderRespDTO toResponseDTO(PurchaseOrder purchaseOrder);
 }
 

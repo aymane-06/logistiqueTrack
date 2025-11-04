@@ -2,7 +2,9 @@ package com.logitrack.logitrack.services;
 
 import com.logitrack.logitrack.dtos.Product.ProductDTO;
 import com.logitrack.logitrack.dtos.Product.ProductRespDTO;
+import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderRespDTO;
 import com.logitrack.logitrack.mapper.ProductMapper;
+import com.logitrack.logitrack.models.Inventory;
 import com.logitrack.logitrack.models.Product;
 import com.logitrack.logitrack.repositories.ProductRepository;
 import jakarta.validation.Valid;
@@ -51,4 +53,5 @@ public class ProductServices {
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with SKU: " + sku));
         productRepository.delete(product);
     }
+
 }

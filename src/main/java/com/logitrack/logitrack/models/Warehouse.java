@@ -39,9 +39,13 @@ public class Warehouse {
 
     private Boolean active = true;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "warehouse_manager_id")
     private WAREHOUSE_MANAGER warehouse_manager;
+
+    @OneToMany
+    @JoinColumn(name = "warehouse_id")
+    private List<PurchaseOrder> purchaseOrders;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

@@ -13,8 +13,9 @@ import java.util.UUID;
 
 @Data
 public class PurchaseOrderDTO {
-    @NotNull(message = "Warehouse manager ID is required")
-    private UUID warehouseManagerId;
+
+    @NotNull(message = "Warehouse ID is required")
+    private UUID warehouseId;
     @NotNull(message = "Supplier is required")
     private UUID supplierId;
     @NotNull(message = "Purchase order lines are required")
