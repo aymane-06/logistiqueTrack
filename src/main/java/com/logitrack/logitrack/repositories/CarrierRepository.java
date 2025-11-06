@@ -3,5 +3,7 @@ package com.logitrack.logitrack.repositories;
 import com.logitrack.logitrack.models.Carrier;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface CarrierRepository extends JpaRepository<Carrier, Long> {
+import java.util.UUID;
+
+public interface CarrierRepository extends JpaRepository<Carrier, UUID> {
 }

@@ -14,6 +14,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.UUID;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
@@ -24,8 +25,8 @@ import java.time.LocalTime;
 @AllArgsConstructor
 public class Carrier {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(unique = true, nullable = false)
     private String code;
@@ -35,13 +36,17 @@ public class Carrier {
 
     private String contactEmail;
     private String contactPhone;
-
+    @Builder.Default
     private BigDecimal baseShippingRate = BigDecimal.ZERO;
+    @Builder.Default
     private Integer maxDailyCapacity = 100;
+    @Builder.Default
     private Integer currentDailyShipments = 0;
+    @Builder.Default
     private LocalTime cutOffTime = LocalTime.of(15, 0);
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private CarrierStatus status = CarrierStatus.ACTIVE;
 
     @CreatedDate
@@ -50,4 +55,11 @@ public class Carrier {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void generateCode() {
+        if (this.code == null || this.code.isEmpty()) {
+            this.code = "CARR-" + System.currentTimeMillis();
+        }
+    }
 }

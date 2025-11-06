@@ -1,0 +1,420 @@
+{
+	"info": {
+		"_postman_id": "6332c362-1c7a-456c-8bc9-b551d7b08b0e",
+		"name": "Complete End-to-End Workflow",
+		"description": "Full workflow: Register WHM → Create WH → Create Supplier → Create Product → Create PO → Approve PO → Deliver PO → Create Client → Create SO → Reserve SO",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39683881"
+	},
+	"item": [
+		{
+			"name": "PHASE 1: Infrastructure Setup",
+			"item": [
+				{
+					"name": "Step 1: Register Warehouse Manager",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Warehouse\",\n  \"email\": \"john@warehouse.com\",\n  \"passwordHash\": \"SecurePassword123!\",\n  \"role\": \"WAREHOUSE_MANAGER\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/auth/register",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2: Create Warehouse",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Main Distribution Center\",\n  \"location\": \"Downtown NYC\",\n  \"warehouseManagerId\": \"{{WAREHOUSE_MANAGER_ID}}\",\n  \"active\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/warehouses/initialize",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"warehouses",
+								"initialize"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 3: Create Supplier",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Tech Supplies Inc\",\n  \"contactInfo\": \"1-800-TECH-SUP\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/suppliers/add",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"suppliers",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 4: Create Product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Laptop Computer\",\n  \"category\": \"Electronics\",\n  \"active\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/products/add",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"products",
+								"add"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "PHASE 2: Purchase Order Management",
+			"item": [
+				{
+					"name": "Step 5: Create Purchase Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"warehouseId\": \"{{WAREHOUSE_ID}}\",\n  \"supplierId\": \"{{SUPPLIER_ID}}\",\n  \"lines\": [\n    {\n      \"productId\": \"{{PRODUCT_ID}}\",\n      \"quantity\": 100,\n      \"unitPrice\": 800.00\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/purchase-orders/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"purchase-orders",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 6: Admin Approves Purchase Order",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"APPROVED\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/admins/purchaseOrder-status/update/{{PURCHASE_ORDER_ID}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"admins",
+								"purchaseOrder-status",
+								"update",
+								"{{PURCHASE_ORDER_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 7: Mark Purchase Order as Delivered",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"DELIVERED\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/admins/purchaseOrder-status/update/{{PURCHASE_ORDER_ID}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"admins",
+								"purchaseOrder-status",
+								"update",
+								"{{PURCHASE_ORDER_ID}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "PHASE 3: Sales Order Management",
+			"item": [
+				{
+					"name": "Step 8: Create Client",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"ABC Tech Store\",\n  \"email\": \"orders@abctech.com\",\n  \"contactInfo\": \"1-800-ABC-TECH\"\n}\n\nNOTE: This endpoint does not exist yet.\nYou need to create a ClientController with a POST /api/clients/create endpoint.\n"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/clients/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"clients",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 9: Create Sales Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"clientId\": \"{{CLIENT_ID}}\",\n  \"warehouseId\": \"{{WAREHOUSE_ID}}\",\n  \"lines\": [\n    {\n      \"productId\": \"{{PRODUCT_ID}}\",\n      \"quantity\": 50,\n      \"unitPrice\": 1200.00,\n      \"backorder\": false\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/sales-orders/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"sales-orders",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 10: Reserve Sales Order",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/sales-orders/{{SALES_ORDER_ID}}/reserve",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"sales-orders",
+								"{{SALES_ORDER_ID}}",
+								"reserve"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Verification & Queries",
+			"item": [
+				{
+					"name": "Get Warehouse",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/warehouses/{{WAREHOUSE_ID}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"warehouses",
+								"{{WAREHOUSE_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Purchase Order",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/purchase-orders/{{PURCHASE_ORDER_ID}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"purchase-orders",
+								"{{PURCHASE_ORDER_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sales Order",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/sales-orders/{{SALES_ORDER_ID}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"sales-orders",
+								"{{SALES_ORDER_ID}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "WAREHOUSE_MANAGER_ID",
+			"value": ""
+		},
+		{
+			"key": "WAREHOUSE_ID",
+			"value": ""
+		},
+		{
+			"key": "SUPPLIER_ID",
+			"value": ""
+		},
+		{
+			"key": "PRODUCT_ID",
+			"value": ""
+		},
+		{
+			"key": "PURCHASE_ORDER_ID",
+			"value": ""
+		},
+		{
+			"key": "CLIENT_ID",
+			"value": ""
+		},
+		{
+			"key": "SALES_ORDER_ID",
+			"value": ""
+		}
+	]
+}

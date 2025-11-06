@@ -78,32 +78,40 @@ public class SalesOrderService {
     public Object reserveSalesOrder(UUID id) {
         SalesOrder salesOrder = salesOrderRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Sales Order with id " + id + " not found."));
-        List<PurchaseOrderLine> linesToPurchase = new ArrayList<PurchaseOrderLine>();
-        // Process backorder lines to transfer products between warehouses
-        salesOrder.getLines().stream()
-                .filter(l -> l.getBackorder())
-                .forEach(l -> {
-                    Integer remainingQty = transferProductsBetweenWarehouses(salesOrder.getWarehouse(), l.getProduct().getId(), l.getQuantity());
-                    if (remainingQty == 0) {
-                        l.setBackorder(false);
 
-                    }
-                    else{
-                        PurchaseOrderLine lineToPurchase = PurchaseOrderLine.builder()
-                                .product(l.getProduct())
-                                .quantity(remainingQty)
-                                .unitPrice(l.getUnitPrice())
-                                .build();
-                        linesToPurchase.add(lineToPurchase);
-                    }
-                });
-            // Process purchase order lines
+        if(salesOrder.getStatus() != OrderStatus.CREATED) {
+            throw new IllegalStateException("Only orders in CREATED status can be reserved.");
+        }
+        List<PurchaseOrderLine> linesToPurchase = new ArrayList<PurchaseOrderLine>();
+        
+        // Process ALL lines (both backorder and non-backorder)
+        for (var line : salesOrder.getLines()) {
+            if (line.getBackorder()) {
+                // For backorder lines: transfer from other warehouses
+                Integer remainingQty = transferProductsBetweenWarehouses(salesOrder.getWarehouse(), line.getProduct().getId(), line.getQuantity());
+                if (remainingQty == 0) {
+                    line.setBackorder(false);
+                } else {
+                    PurchaseOrderLine lineToPurchase = PurchaseOrderLine.builder()
+                            .product(line.getProduct())
+                            .quantity(remainingQty)
+                            .unitPrice(line.getUnitPrice())
+                            .build();
+                    linesToPurchase.add(lineToPurchase);
+                }
+            } else {
+                // For non-backorder lines: reserve from current warehouse
+                reserveInventoryFromWarehouse(salesOrder.getWarehouse(), line.getProduct().getId(), line.getQuantity());
+            }
+        }
+        
+        // Process purchase order lines if any
         if (!linesToPurchase.isEmpty()) {
             PurchaseOrder newPurchaseOrder = PurchaseOrder.builder()
                     .warehouse(salesOrder.getWarehouse())
                     .lines(linesToPurchase)
                     .status(com.logitrack.logitrack.models.ENUM.PurchaseOrderStatus.CREATED)
-                    .expectedDelivery(LocalDateTime.now().plusDays(7)) // Example: set expected delivery to 7 days from now
+                    .expectedDelivery(LocalDateTime.now().plusDays(7))
                     .build();
                     return Map.of(
                         "message", "Purchase order created for backordered lines",
@@ -180,6 +188,21 @@ public class SalesOrderService {
         }
         return quantity ; // Return remaining quantity that couldn't be transferred
     
+    }
+
+    private void reserveInventoryFromWarehouse(Warehouse warehouse, UUID productId, Integer quantity) {
+        List<Inventory> inventories = warehouse.getInventories();
+        for (Inventory inv : inventories) {
+            if (inv.getProduct().getId().equals(productId)) {
+                int availableQty = inv.getQtyOnHand() - inv.getQtyReserved();
+                if (availableQty >= quantity) {
+                    inv.setQtyReserved(inv.getQtyReserved() + quantity);
+                    warehouseRepository.save(warehouse);
+                    return;
+                }
+            }
+        }
+        throw new IllegalArgumentException("Insufficient inventory for product " + productId);
     }
     
 }
