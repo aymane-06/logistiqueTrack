@@ -29,6 +29,11 @@ public class PurchaseOrder {
     private UUID id;
 
     @ManyToOne
+    @JoinColumn(name = "warehouse_id")
+    private Warehouse warehouse;
+
+
+    @ManyToOne
     @JoinColumn(name = "supplier_id", nullable = false)
     private Supplier supplier;
 
@@ -45,12 +50,9 @@ public class PurchaseOrder {
 
     private LocalDateTime expectedDelivery;
 
-    private LocalDateTime actualDelivery;
+    private LocalDateTime ActualDelivery;
 
-    @OneToMany(mappedBy = "purchaseOrder", cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "purchaseOrder", cascade = CascadeType.ALL)
     @Builder.Default
     private List<PurchaseOrderLine> lines = new ArrayList<>();
-    @ManyToOne
-    @JoinColumn(name = "warehouse_id")
-    private Warehouse warehouse;
 }

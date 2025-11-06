@@ -1,4 +1,4 @@
-package com.logitrack.logitrack.dtos;
+package com.logitrack.logitrack.dtos.Inventory;
 
 import com.logitrack.logitrack.dtos.Product.ProductRespDTO;
 import com.logitrack.logitrack.dtos.Warehouse.WarehouseRespDTO;
@@ -11,10 +11,10 @@ public class InventoryDTO {
     private String id;
 
     @NotNull(message = "Product ID is required")
-    private ProductRespDTO product;
+    private String productId;
 
     @NotNull(message = "Warehouse ID is required")
-    private WarehouseRespDTO warehouse;
+    private String warehouseID;
 
     @Min(value = 0, message = "Quantity on hand must be at least 0")
     private Integer qtyOnHand;

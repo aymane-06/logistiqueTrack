@@ -36,7 +36,7 @@ public class SalesOrderLine {
 
     @Column(nullable = false)
     private Integer quantity;
-
+    @Column(columnDefinition = "DECIMAL(10,2) CHECK (unit_price >= 0.00)")
     private BigDecimal unitPrice;
 
     private Boolean backorder = false;

@@ -48,6 +48,7 @@ public class SalesOrder {
     private LocalDateTime deliveredAt;
 
     @OneToMany(mappedBy = "salesOrder", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<SalesOrderLine> lines = new ArrayList<>();
 
     @OneToOne(mappedBy = "salesOrder", cascade = CascadeType.ALL)

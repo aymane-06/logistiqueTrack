@@ -1,10 +1,11 @@
 package com.logitrack.logitrack.dtos.Warehouse;
 
+import com.logitrack.logitrack.dtos.Inventory.InventoryDTO;
+import com.logitrack.logitrack.dtos.Inventory.WareHouseInventoryRespDTO;
 import com.logitrack.logitrack.dtos.WarehouseManagerDTO;
-import com.logitrack.logitrack.models.WAREHOUSE_MANAGER;
 import lombok.Data;
 
-import java.util.UUID;
+import java.util.List;
 
 @Data
 public class WarehouseRespDTO {
@@ -14,6 +15,7 @@ public class WarehouseRespDTO {
     private String location;
     private Boolean active;
     private WarehouseManagerDTO warehouse_manager;
+    private List<WareHouseInventoryRespDTO> inventories;
     private String createdAt;
     private String updatedAt;
 }
