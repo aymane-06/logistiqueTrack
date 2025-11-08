@@ -4,14 +4,11 @@ import com.logitrack.logitrack.dtos.SalesOrder.SalesOrderDTO;
 import com.logitrack.logitrack.dtos.SalesOrder.SalesOrderRespDTO;
 import com.logitrack.logitrack.mapper.PurchaseOrderMapper;
 import com.logitrack.logitrack.mapper.SalesOrderMapper;
+import com.logitrack.logitrack.models.*;
 import com.logitrack.logitrack.models.ENUM.MovementType;
 import com.logitrack.logitrack.models.ENUM.OrderStatus;
-import com.logitrack.logitrack.models.Inventory;
-import com.logitrack.logitrack.models.InventoryMovement;
-import com.logitrack.logitrack.models.PurchaseOrder;
-import com.logitrack.logitrack.models.PurchaseOrderLine;
-import com.logitrack.logitrack.models.SalesOrder;
-import com.logitrack.logitrack.models.Warehouse;
+import com.logitrack.logitrack.models.ENUM.ShipmentStatus;
+import com.logitrack.logitrack.repositories.CarrierRepository;
 import com.logitrack.logitrack.repositories.SalesOrderRepository;
 import com.logitrack.logitrack.repositories.WarehouseRepository;
 
@@ -22,6 +19,7 @@ import org.springframework.stereotype.Service;
 import static com.logitrack.logitrack.models.ENUM.MovementType.OUTBOUND;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,6 +33,7 @@ public class SalesOrderService {
     private final SalesOrderMapper salesOrderMapper;
     private final WarehouseRepository warehouseRepository;
     private final PurchaseOrderMapper purchaseOrderMapper;
+    private final CarrierRepository carrierRepository;
 
     public SalesOrderRespDTO createSalesOrder(SalesOrderDTO salesOrderDTO) {
         SalesOrder salesOrder=salesOrderMapper.toEntity(salesOrderDTO);
@@ -204,5 +203,104 @@ public class SalesOrderService {
         }
         throw new IllegalArgumentException("Insufficient inventory for product " + productId);
     }
-    
+
+
+    public SalesOrderRespDTO shipSalesOrder(UUID id,UUID carrierId) {
+        SalesOrder salesOrder = salesOrderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Sales Order with id " + id + " not found."));
+
+        if(salesOrder.getStatus() != OrderStatus.RESERVED) {
+            throw new IllegalStateException("Only orders in RESERVED status can be shipped.");
+        }
+
+        // Deduct reserved quantities from inventory
+        for (SalesOrderLine line : salesOrder.getLines()) {
+            List<Inventory> inventories = salesOrder.getWarehouse().getInventories();
+            for (Inventory inv : inventories) {
+                if (inv.getProduct().getId().equals(line.getProduct().getId())) {
+                    inv.setQtyOnHand(inv.getQtyOnHand() - line.getQuantity());
+                    inv.setQtyReserved(inv.getQtyReserved() - line.getQuantity());
+
+                    InventoryMovement inventoryMovement = InventoryMovement.builder()
+                            .inventory(inv)
+                            .type(OUTBOUND)
+                            .quantity(line.getQuantity())
+                            .occurredAt(LocalDateTime.now())
+                            .build();
+                    inv.getInventoryMovements().add(inventoryMovement);
+
+                    warehouseRepository.save(salesOrder.getWarehouse());
+                    break;
+                }
+            }
+        }
+        Carrier carrier = carrierRepository.findById(carrierId).orElseThrow(()-> new IllegalArgumentException("Carrier with id " + carrierId + " not found."));
+        if(carrier.getMaxDailyCapacity()-carrier.getCurrentDailyShipments()<1){
+            throw new IllegalStateException("Carrier has reached its maximum daily capacity.");
+        }
+        carrier.setCurrentDailyShipments(carrier.getCurrentDailyShipments()+1);
+        carrierRepository.save(carrier);
+
+        // Create shipment record
+        Shipment shipment = Shipment.builder()
+                .carrier(carrier)
+                .salesOrder(salesOrder)
+                .status(ShipmentStatus.PLANNED)
+                .isCutOffPassed(LocalTime.now().isAfter(carrier.getCutOffTime()))
+                .shippedDate(LocalTime.now().isAfter(carrier.getCutOffTime())? LocalDateTime.now().plusDays(1) : LocalDateTime.now())
+                .build();
+        salesOrder.setShipment(shipment);
+
+
+        // Update sales order status to SHIPPED
+        salesOrder.setStatus(OrderStatus.SHIPPED);
+        salesOrder.setShippedAt(LocalDateTime.now());
+        salesOrderRepository.save(salesOrder);
+        return salesOrderMapper.toRespDTO(salesOrder);
+    }
+
+    public SalesOrderRespDTO deliverSalesOrder(UUID id) {
+        SalesOrder salesOrder = salesOrderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Sales Order with id " + id + " not found."));
+
+        if(salesOrder.getStatus() != OrderStatus.SHIPPED) {
+            throw new IllegalStateException("Only orders in SHIPPED status can be delivered.");
+        }
+
+        // Update sales order status to DELIVERED
+        salesOrder.getShipment().setStatus(com.logitrack.logitrack.models.ENUM.ShipmentStatus.DELIVERED);
+        salesOrder.getShipment().setDeliveredDate(LocalDateTime.now());
+        salesOrder.setStatus(OrderStatus.DELIVERED);
+        salesOrder.setDeliveredAt(LocalDateTime.now());
+        salesOrderRepository.save(salesOrder);
+        return salesOrderMapper.toRespDTO(salesOrder);
+    }
+
+    public SalesOrderRespDTO cancelSalesOrder(UUID id) {
+        SalesOrder salesOrder = salesOrderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Sales Order with id " + id + " not found."));
+
+        if(salesOrder.getStatus() == OrderStatus.SHIPPED || salesOrder.getStatus() == OrderStatus.DELIVERED) {
+            throw new IllegalStateException("Shipped or delivered orders cannot be canceled.");
+        }
+
+        // Release reserved quantities back to inventory
+        if(salesOrder.getStatus() == OrderStatus.RESERVED) {
+            for (SalesOrderLine line : salesOrder.getLines()) {
+                List<Inventory> inventories = salesOrder.getWarehouse().getInventories();
+                for (Inventory inv : inventories) {
+                    if (inv.getProduct().getId().equals(line.getProduct().getId())) {
+                        inv.setQtyReserved(inv.getQtyReserved() - line.getQuantity());
+                        warehouseRepository.save(salesOrder.getWarehouse());
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Update sales order status to CANCELED
+        salesOrder.setStatus(OrderStatus.CANCELED);
+        salesOrderRepository.save(salesOrder);
+        return salesOrderMapper.toRespDTO(salesOrder);
+    }
 }

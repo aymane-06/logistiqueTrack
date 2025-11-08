@@ -35,4 +35,7 @@ public class Supplier {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+
+
 }

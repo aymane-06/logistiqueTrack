@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "6332c362-1c7a-456c-8bc9-b551d7b08b0e",
-		"name": "Complete End-to-End Workflow",
+		"name": "Complete End-to-End Workflow 2",
 		"description": "Full workflow: Register WHM → Create WH → Create Supplier → Create Product → Create PO → Approve PO → Deliver PO → Create Client → Create SO → Reserve SO",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "39683881"
@@ -209,7 +209,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"status\": \"DELIVERED\"\n}"
+							"raw": "{\n  \"status\": \"RECEIVED\"\n}"
 						},
 						"url": {
 							"raw": "http://localhost:8080/api/admins/purchaseOrder-status/update/{{PURCHASE_ORDER_ID}}",
@@ -232,6 +232,41 @@
 			]
 		},
 		{
+			"name": "PHASE 2B: Carrier Setup",
+			"item": [
+				{
+					"name": "Step 7B: Create Carrier",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"FastShip Logistics\",\n  \"contactInfo\": \"1-800-FASTSHIP\",\n  \"maxDailyCapacity\": 50,\n  \"currentDailyShipments\": 0,\n  \"cutOffTime\": \"14:00:00\",\n  \"active\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/carriers/add",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"carriers",
+								"add"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "PHASE 3: Sales Order Management",
 			"item": [
 				{
@@ -246,10 +281,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"ABC Tech Store\",\n  \"email\": \"orders@abctech.com\",\n  \"contactInfo\": \"1-800-ABC-TECH\"\n}\n\nNOTE: This endpoint does not exist yet.\nYou need to create a ClientController with a POST /api/clients/create endpoint.\n"
+							"raw": "{\n  \"name\": \"ABC Tech Store\",\n  \"email\": \"orders@abctech.com\",\n  \"contactInfo\": \"1-800-ABC-TECH\",\n  \"passwordHash\": \"ClientPassword123!\",\n  \"role\": \"CLIENT\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/clients/create",
+							"raw": "http://localhost:8080/api/auth/register",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -257,8 +292,8 @@
 							"port": "8080",
 							"path": [
 								"api",
-								"clients",
-								"create"
+								"auth",
+								"register"
 							]
 						}
 					},
@@ -315,19 +350,72 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Step 11: Ship Sales Order",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"carrierId\": \"{{CARRIER_ID}}\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/sales-orders/{{SALES_ORDER_ID}}/ship",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"sales-orders",
+								"{{SALES_ORDER_ID}}",
+								"ship"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 12: Deliver Sales Order",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/sales-orders/{{SALES_ORDER_ID}}/deliver",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"sales-orders",
+								"{{SALES_ORDER_ID}}",
+								"deliver"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
 		{
-			"name": "Verification & Queries",
+			"name": "PHASE 4: Verification & Queries (GET All)",
 			"item": [
 				{
-					"name": "Get Warehouse",
+					"name": "Get All Warehouses",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/warehouses/{{WAREHOUSE_ID}}",
+							"raw": "http://localhost:8080/api/warehouses/all",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -336,14 +424,56 @@
 							"path": [
 								"api",
 								"warehouses",
-								"{{WAREHOUSE_ID}}"
+								"all"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "Get Purchase Order",
+					"name": "Get Warehouse by Code",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/warehouses/{{WAREHOUSE_CODE}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"warehouses",
+								"{{WAREHOUSE_CODE}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Purchase Orders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/purchase-orders/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"purchase-orders",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Purchase Order by ID",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -364,7 +494,28 @@
 					"response": []
 				},
 				{
-					"name": "Get Sales Order",
+					"name": "Get All Sales Orders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/sales-orders/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"sales-orders",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sales Order by ID",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -379,6 +530,151 @@
 								"api",
 								"sales-orders",
 								"{{SALES_ORDER_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/products/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"products",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Suppliers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/suppliers/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"suppliers",
+								"all"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "PHASE 5: Error Scenarios & Edge Cases",
+			"item": [
+				{
+					"name": "Error: Ship without Reserve",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/sales-orders/{{INVALID_SO_ID}}/ship",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"sales-orders",
+								"{{INVALID_SO_ID}}",
+								"ship"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Deliver without Ship",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/sales-orders/{{INVALID_SO_ID}}/deliver",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"sales-orders",
+								"{{INVALID_SO_ID}}",
+								"deliver"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Insufficient Inventory",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/sales-orders/{{SALES_ORDER_ID}}/reserve",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"sales-orders",
+								"{{SALES_ORDER_ID}}",
+								"reserve"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Invalid PO Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"INVALID_STATUS\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/admins/purchaseOrder-status/update/{{PURCHASE_ORDER_ID}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"admins",
+								"purchaseOrder-status",
+								"update",
+								"{{PURCHASE_ORDER_ID}}"
 							]
 						}
 					},
@@ -415,6 +711,18 @@
 		{
 			"key": "SALES_ORDER_ID",
 			"value": ""
+		},
+		{
+			"key": "WAREHOUSE_CODE",
+			"value": ""
+		},
+		{
+			"key": "CARRIER_ID",
+			"value": ""
+		},
+		{
+			"key": "INVALID_SO_ID",
+			"value": "00000000-0000-0000-0000-000000000000"
 		}
 	]
 }

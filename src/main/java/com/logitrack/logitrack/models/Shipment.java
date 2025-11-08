@@ -53,4 +53,11 @@ public class Shipment {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void generateTrackingNumber() {
+        if (this.trackingNumber == null || this.trackingNumber.isEmpty()) {
+            this.trackingNumber = "TRK-" + System.currentTimeMillis();
+        }
+    }
 }

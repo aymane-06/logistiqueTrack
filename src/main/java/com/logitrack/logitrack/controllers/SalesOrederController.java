@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -37,4 +38,15 @@ public class SalesOrederController {
     public ResponseEntity<?> reserveSalesOrder(@PathVariable UUID id) {
         return ResponseEntity.ok(salesOrderService.reserveSalesOrder(id));
     }
+
+    @PutMapping("/{id}/ship")
+    public ResponseEntity<?> shipSalesOrder(@PathVariable UUID id,@RequestBody Map<String, String> shipmentDetails) {
+        UUID carierId = UUID.fromString(shipmentDetails.get("carrierId"));
+        return ResponseEntity.ok(salesOrderService.shipSalesOrder(id,carierId));
+        }
+
+        @PutMapping("/{id}/deliver")
+        public ResponseEntity<?> deliverSalesOrder(@PathVariable UUID id) {
+            return ResponseEntity.ok(salesOrderService.deliverSalesOrder(id));
+        }
 }
