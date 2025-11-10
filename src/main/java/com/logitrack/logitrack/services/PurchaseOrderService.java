@@ -21,6 +21,7 @@ public class PurchaseOrderService {
 
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final PurchaseOrderMapper purchaseOrderMapper;
+    private final ProductRepository productRepository;
 
 
     public PurchaseOrderRespDTO createPurchaseOrder(PurchaseOrderDTO purchaseOrderDTO) {
@@ -92,8 +93,10 @@ public class PurchaseOrderService {
                                             .qtyReserved(0)
                                             .warehouse(existingPurchaseOrder.getWarehouse())
                                             .build();
+                                    line.getProduct().getInventory().add(newInventory);
                                     // Add to warehouse inventories list - will be cascaded when saving PurchaseOrder
                                     existingPurchaseOrder.getWarehouse().getInventories().add(newInventory);
+
 
                                     InventoryMovement inventoryMovement = InventoryMovement.builder()
                                             .inventory(newInventory)
@@ -111,4 +114,6 @@ public class PurchaseOrderService {
         purchaseOrderRepository.save(existingPurchaseOrder);
         return purchaseOrderMapper.toResponseDTO(existingPurchaseOrder);
     }
+
+
 }

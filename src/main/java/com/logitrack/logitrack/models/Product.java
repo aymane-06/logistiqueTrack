@@ -40,7 +40,7 @@ public class Product {
     private BigDecimal boughtPrice;
 
     @OneToMany
-    @JoinColumn(name = "inventory_id")
+    @JoinColumn(name = "product_id")
     private List<Inventory> inventory;
 
     @OneToMany
@@ -48,7 +48,7 @@ public class Product {
     private List<PurchaseOrderLine> purchaseOrderLine;
 
     @OneToMany
-    @JoinColumn(name = "sales_order_line_id")
+    @JoinColumn(name = "product_id")
     private List<SalesOrderLine> salesOrderLines;
 
     @CreatedDate
