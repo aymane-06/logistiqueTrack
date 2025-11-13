@@ -6,19 +6,22 @@ import com.logitrack.logitrack.dtos.Warehouse.OrderWarehouseRespDTO;
 import com.logitrack.logitrack.dtos.Warehouse.WarehouseDTO;
 import com.logitrack.logitrack.dtos.Warehouse.WarehouseRespDTO;
 import com.logitrack.logitrack.dtos.WarehouseManagerDTO;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Data
+@Builder
 public class PurchaseOrderRespDTO {
-    private String id;
-    private SupplierDTO supplier;
-    private OrderWarehouseRespDTO warehouse;
-    private String status;
-    private LocalDateTime expectedDelivery;
-    private List<PurchaseOrderLineRespDTO> lines;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    public UUID id;
+    public SupplierDTO supplier;
+    public OrderWarehouseRespDTO warehouse;
+    public String status;
+    public LocalDateTime expectedDelivery;
+    public List<PurchaseOrderLineRespDTO> lines;
+    public LocalDateTime createdAt;
+    public LocalDateTime updatedAt;
 }

@@ -37,7 +37,7 @@ class ProductControllerTest {
     @Mock
     private ProductServices productServices;
 
-    private ProductDTO productDTO;
+    private ProductDTO productDTO;      
     private ProductRespDTO productRespDTO;
     private UUID productId;
 

@@ -1,14 +1,17 @@
 package com.logitrack.logitrack.dtos.Warehouse;
 
-import com.logitrack.logitrack.dtos.Inventory.WareHouseInventoryRespDTO;
+
+import java.util.UUID;
+
 import com.logitrack.logitrack.dtos.WarehouseManagerDTO;
+
+import lombok.Builder;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
+@Builder
 public class OrderWarehouseRespDTO {
-    private String id;
+    private UUID id;
     private String code;
     private String name;
     private String location;

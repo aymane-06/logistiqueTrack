@@ -2,6 +2,7 @@ package com.logitrack.logitrack.services;
 
 import com.logitrack.logitrack.dtos.Product.ProductDTO;
 import com.logitrack.logitrack.dtos.Product.ProductRespDTO;
+import com.logitrack.logitrack.exception.ResourceNotFoundException;
 import com.logitrack.logitrack.mapper.ProductMapper;
 import com.logitrack.logitrack.models.Product;
 import com.logitrack.logitrack.repositories.ProductRepository;
@@ -182,7 +183,7 @@ class ProductServicesTest {
 
         // Act & Assert
         assertThatThrownBy(() -> productServices.updateProduct("INVALID", productDTO))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Product not found with SKU: INVALID");
     }
 
