@@ -6,8 +6,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.2.12</version>
-        <relativePath/> <!-- lookup parent from repository -->
-    </parent>
+        <relativePath/> </parent>
     <groupId>com.logitrack</groupId>
     <artifactId>logitrack</artifactId>
     <version>0.0.1-SNAPSHOT</version>
@@ -29,7 +28,21 @@
     </scm>
     <properties>
         <java.version>17</java.version>
-    </properties>
+
+        <sonar.projectKey>com.logitrack:logitrack</sonar.projectKey>
+        <sonar.projectName>Logitrack</sonar.projectName>
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+        <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+        <sonar.jacoco.reportPath>${project.build.directory}/jacoco.exec</sonar.jacoco.reportPath>
+        <sonar.language>java</sonar.language>
+        <sonar.coverage.exclusions>
+            **/*DTO.*,
+            **/mapper/*.*,
+            **/LogitrackApplication.*,
+            **/config/*.*
+        </sonar.coverage.exclusions>
+        </properties>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -81,15 +94,12 @@
             <version>6.4.4</version>
         </dependency>
 
-
-        <!-- MapStruct Core -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>1.5.5.Final</version>
         </dependency>
 
-        <!-- MapStruct Processor (important pour la génération) -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct-processor</artifactId>
@@ -101,21 +111,18 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- H2 Database for Testing -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- JUnit 5 Extended Support -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- Mockito for Mocking -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
@@ -123,7 +130,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Mockito JUnit Jupiter Integration -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
@@ -131,14 +137,12 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- AssertJ for Fluent Assertions -->
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- Swagger / OpenAPI Documentation -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
@@ -148,7 +152,6 @@
 
     <build>
         <plugins>
-            <!-- JaCoCo for test coverage reports -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -167,9 +170,16 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*DTO.*</exclude>
+                        <exclude>**/mapper/*.*</exclude>
+                        <exclude>**/LogitrackApplication.*</exclude>
+                        <exclude>**/config/*.*</exclude>
+                    </excludes>
+                </configuration>
+                </plugin>
 
-            <!-- Maven Surefire Plugin for better Java 24 support -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -179,9 +189,10 @@
                         <include>**/*Test.java</include>
                         <include>**/*Tests.java</include>
                     </includes>
-                    <argLine>-Dnet.bytebuddy.experimental=true</argLine>
+                    <argLine>${argLine} -Dnet.bytebuddy.experimental=true</argLine>
                 </configuration>
             </plugin>
+            
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -200,6 +211,7 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -212,7 +224,13 @@
                     </excludes>
                 </configuration>
             </plugin>
-        </plugins>
+            
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.10.0.2594</version>
+            </plugin>
+            </plugins>
     </build>
 
 </project>

@@ -21,7 +21,6 @@ public class PurchaseOrderService {
 
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final PurchaseOrderMapper purchaseOrderMapper;
-    private final ProductRepository productRepository;
 
 
     public PurchaseOrderRespDTO createPurchaseOrder(PurchaseOrderDTO purchaseOrderDTO) {
