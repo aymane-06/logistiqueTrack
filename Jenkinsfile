@@ -37,14 +37,10 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     // 'verify' a déjà créé le rapport jacoco.exec
                     // 'sonar:sonar' va l'envoyer à SonarQube
-                    sh "mvn sonar:sonar"
+                    sh "mvn sonar:sonar -Dsonar.qualitygate.wait=true -Dsonar.qualitygate.timeout=300"
                 }
-
-                // Attend le résultat du Quality Gate de SonarQube
-                // Si le QG échoue, le pipeline échoue ici.
-                timeout(time: 10, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
+                
+                echo "SonarQube analysis completed successfully"
             }
         }
     }
