@@ -41,6 +41,11 @@ services:
       - "9000:9000"
     environment:
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+      - SONAR_WEB_JAVA_OPTS=-Xmx512M -Xms512M
+      - SONAR_CE_JAVA_OPTS=-Xmx512M -Xms512M
+      - SONAR_ES_JAVA_OPTS=-Xmx512M -Xms512M
+      - "discovery.type=single-node"
+      - "cluster.routing.allocation.disk.threshold_enabled=false"
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_extensions:/opt/sonarqube/extensions
