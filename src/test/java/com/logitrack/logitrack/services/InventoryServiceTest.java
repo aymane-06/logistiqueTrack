@@ -1,9 +1,10 @@
 package com.logitrack.logitrack.services;
 
-import com.logitrack.logitrack.models.Inventory;
-import com.logitrack.logitrack.models.Product;
-import com.logitrack.logitrack.models.Warehouse;
-import com.logitrack.logitrack.repositories.InventoryRepository;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.ArrayList;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,12 +13,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import com.logitrack.logitrack.models.Inventory;
+import com.logitrack.logitrack.models.Product;
+import com.logitrack.logitrack.models.Warehouse;
+import com.logitrack.logitrack.repositories.InventoryRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("InventoryService Tests")

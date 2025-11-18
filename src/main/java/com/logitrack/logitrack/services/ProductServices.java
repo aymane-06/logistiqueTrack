@@ -1,21 +1,20 @@
 package com.logitrack.logitrack.services;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import com.logitrack.logitrack.dtos.Product.ProductDTO;
 import com.logitrack.logitrack.dtos.Product.ProductRespDTO;
-import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderRespDTO;
 import com.logitrack.logitrack.exception.BusinessException;
 import com.logitrack.logitrack.exception.ResourceNotFoundException;
 import com.logitrack.logitrack.mapper.ProductMapper;
-import com.logitrack.logitrack.models.ENUM.OrderStatus;
-import com.logitrack.logitrack.models.ENUM.PurchaseOrderStatus;
-import com.logitrack.logitrack.models.Inventory;
 import com.logitrack.logitrack.models.Product;
+import com.logitrack.logitrack.models.ENUM.OrderStatus;
 import com.logitrack.logitrack.repositories.ProductRepository;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor

@@ -1,16 +1,17 @@
 package com.logitrack.logitrack.services;
 
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
 import com.logitrack.logitrack.dtos.CarrierDTO;
 import com.logitrack.logitrack.dtos.CarrierRespDTO;
 import com.logitrack.logitrack.mapper.CarrierMapper;
 import com.logitrack.logitrack.models.Carrier;
 import com.logitrack.logitrack.repositories.CarrierRepository;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

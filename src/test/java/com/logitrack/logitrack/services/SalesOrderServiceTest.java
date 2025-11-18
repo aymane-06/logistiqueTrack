@@ -1,17 +1,19 @@
 package com.logitrack.logitrack.services;
 
-import com.logitrack.logitrack.dtos.SalesOrder.SalesOrderDTO;
-import com.logitrack.logitrack.dtos.SalesOrder.SalesOrderLine.SalesOrderLineDTO;
-import com.logitrack.logitrack.dtos.SalesOrder.SalesOrderRespDTO;
-import com.logitrack.logitrack.mapper.SalesOrderMapper;
-import com.logitrack.logitrack.mapper.PurchaseOrderMapper;
-import com.logitrack.logitrack.models.*;
-import com.logitrack.logitrack.models.ENUM.CarrierStatus;
-import com.logitrack.logitrack.models.ENUM.OrderStatus;
-import com.logitrack.logitrack.models.ENUM.ShipmentStatus;
-import com.logitrack.logitrack.repositories.CarrierRepository;
-import com.logitrack.logitrack.repositories.SalesOrderRepository;
-import com.logitrack.logitrack.repositories.WarehouseRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,20 +23,25 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.Mockito.when;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.never;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import com.logitrack.logitrack.dtos.SalesOrder.SalesOrderDTO;
+import com.logitrack.logitrack.dtos.SalesOrder.SalesOrderRespDTO;
+import com.logitrack.logitrack.dtos.SalesOrder.SalesOrderLine.SalesOrderLineDTO;
+import com.logitrack.logitrack.mapper.PurchaseOrderMapper;
+import com.logitrack.logitrack.mapper.SalesOrderMapper;
+import com.logitrack.logitrack.models.Carrier;
+import com.logitrack.logitrack.models.Client;
+import com.logitrack.logitrack.models.Inventory;
+import com.logitrack.logitrack.models.Product;
+import com.logitrack.logitrack.models.SalesOrder;
+import com.logitrack.logitrack.models.SalesOrderLine;
+import com.logitrack.logitrack.models.Shipment;
+import com.logitrack.logitrack.models.Warehouse;
+import com.logitrack.logitrack.models.ENUM.CarrierStatus;
+import com.logitrack.logitrack.models.ENUM.OrderStatus;
+import com.logitrack.logitrack.models.ENUM.ShipmentStatus;
+import com.logitrack.logitrack.repositories.CarrierRepository;
+import com.logitrack.logitrack.repositories.SalesOrderRepository;
+import com.logitrack.logitrack.repositories.WarehouseRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SalesOrderService Tests")

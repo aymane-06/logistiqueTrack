@@ -16,7 +16,7 @@ import static com.logitrack.logitrack.models.ENUM.MovementType.OUTBOUND;
 @RequiredArgsConstructor
 public class InventoryService {
 
-    private final InventoryRepository inventoryRepository;
+
 
     public Integer OutBoundInventory(UUID productId, Warehouse warehouse, Integer quantity) {
         List<Inventory> inventory = warehouse.getInventories();

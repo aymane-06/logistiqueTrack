@@ -1,19 +1,19 @@
 package com.logitrack.logitrack.services;
 
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+import org.springframework.web.context.annotation.RequestScope;
+
 import com.logitrack.logitrack.Util.PaswordUtil;
 import com.logitrack.logitrack.dtos.User.UserDTO;
 import com.logitrack.logitrack.dtos.User.UserResponseDTO;
 import com.logitrack.logitrack.mapper.UserMapper;
 import com.logitrack.logitrack.models.User;
 import com.logitrack.logitrack.repositories.UserRepository;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
+
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.web.context.annotation.RequestScope;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
