@@ -43,6 +43,31 @@ pipeline {
                 echo "SonarQube analysis completed successfully"
             }
         }
+        // ... après le stage SonarQube ...
+
+       stage('Build & Push Docker Image') {
+            steps {
+                script {
+                    // 1. Define the image name (Username + Project Name + Tag)
+                    // We use the Jenkins BUILD_NUMBER as a tag for versioning (e.g., v1, v2...)
+                    def imageName = "aymanehimame/logitrack:${env.BUILD_NUMBER}"
+                    
+                    // 2. Build the image locally
+                    // This uses the Dockerfile at the root of your project
+                    def customImage = docker.build(imageName)
+                    
+                    // 3. Login and Push to Registry
+                    // The '' represents the default registry (Docker Hub)
+                    // 'docker-hub-credentials' matches the ID you created in Step 2
+                    docker.withRegistry('', 'docker-hub-credentials') {
+                        customImage.push()
+                        
+                        // Optional: Also push as 'latest' so it's easy to pull the newest one
+                        customImage.push('latest')
+                    }
+                }
+            }
+        }
     }
 
     // 6. Actions Post-Build (toujours exécutées)
