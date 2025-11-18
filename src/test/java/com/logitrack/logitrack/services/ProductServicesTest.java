@@ -2,9 +2,11 @@ package com.logitrack.logitrack.services;
 
 import com.logitrack.logitrack.dtos.Product.ProductDTO;
 import com.logitrack.logitrack.dtos.Product.ProductRespDTO;
+import com.logitrack.logitrack.exception.BusinessException;
 import com.logitrack.logitrack.exception.ResourceNotFoundException;
 import com.logitrack.logitrack.mapper.ProductMapper;
-import com.logitrack.logitrack.models.Product;
+import com.logitrack.logitrack.models.*;
+import com.logitrack.logitrack.models.ENUM.OrderStatus;
 import com.logitrack.logitrack.repositories.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -211,5 +213,174 @@ class ProductServicesTest {
         assertThatThrownBy(() -> productServices.deleteProductBySku("INVALID"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Product not found with SKU: INVALID");
+    }
+
+    @Test
+    @DisplayName("Should activate product successfully")
+    void testProductStatusUpdate_Activate() {
+        // Arrange
+        product.setActive(false);
+        when(productRepository.findBySku("SKU-001")).thenReturn(Optional.of(product));
+        when(productRepository.save(product)).thenReturn(product);
+
+        // Act
+        Product result = productServices.productStatusUpdate("SKU-001", true);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getActive()).isTrue();
+        verify(productRepository).findBySku("SKU-001");
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when deactivating product with active sales orders")
+    void testProductStatusUpdate_WithActiveSalesOrders() {
+        // Arrange
+        SalesOrder activeSalesOrder = SalesOrder.builder()
+                .id(UUID.randomUUID())
+                .status(OrderStatus.CREATED)
+                .build();
+        
+        SalesOrderLine salesOrderLine = SalesOrderLine.builder()
+                .id(UUID.randomUUID())
+                .salesOrder(activeSalesOrder)
+                .product(product)
+                .build();
+        
+        product.setSalesOrderLines(List.of(salesOrderLine));
+        product.setActive(true);
+        
+        when(productRepository.findBySku("SKU-001")).thenReturn(Optional.of(product));
+
+        // Act & Assert
+        assertThatThrownBy(() -> productServices.productStatusUpdate("SKU-001", false))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("Cannot deactivate product")
+                .hasMessageContaining("active sales orders");
+
+        verify(productRepository).findBySku("SKU-001");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when deactivating product with reserved sales orders")
+    void testProductStatusUpdate_WithReservedSalesOrders() {
+        // Arrange
+        SalesOrder reservedSalesOrder = SalesOrder.builder()
+                .id(UUID.randomUUID())
+                .status(OrderStatus.RESERVED)
+                .build();
+        
+        SalesOrderLine salesOrderLine = SalesOrderLine.builder()
+                .id(UUID.randomUUID())
+                .salesOrder(reservedSalesOrder)
+                .product(product)
+                .build();
+        
+        product.setSalesOrderLines(List.of(salesOrderLine));
+        product.setActive(true);
+        
+        when(productRepository.findBySku("SKU-001")).thenReturn(Optional.of(product));
+
+        // Act & Assert
+        assertThatThrownBy(() -> productServices.productStatusUpdate("SKU-001", false))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("Cannot deactivate product")
+                .hasMessageContaining("active sales orders");
+
+        verify(productRepository).findBySku("SKU-001");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when deactivating product with available inventory")
+    void testProductStatusUpdate_WithAvailableInventory() {
+        // Arrange
+        Inventory inventory = Inventory.builder()
+                .id(UUID.randomUUID())
+                .product(product)
+                .qtyOnHand(50)
+                .qtyReserved(0)
+                .build();
+        
+        product.setSalesOrderLines(List.of());  // No active orders
+        product.setInventory(List.of(inventory));
+        product.setActive(true);
+        
+        when(productRepository.findBySku("SKU-001")).thenReturn(Optional.of(product));
+
+        // Act & Assert
+        assertThatThrownBy(() -> productServices.productStatusUpdate("SKU-001", false))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("Cannot deactivate product")
+                .hasMessageContaining("available inventory");
+
+        verify(productRepository).findBySku("SKU-001");
+    }
+
+    @Test
+    @DisplayName("Should deactivate product successfully when no active orders and no inventory")
+    void testProductStatusUpdate_Deactivate_Success() {
+        // Arrange
+        product.setSalesOrderLines(List.of());  // No active orders
+        product.setInventory(List.of());  // No inventory
+        product.setActive(true);
+        
+        when(productRepository.findBySku("SKU-001")).thenReturn(Optional.of(product));
+        when(productRepository.save(product)).thenReturn(product);
+
+        // Act
+        Product result = productServices.productStatusUpdate("SKU-001", false);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getActive()).isFalse();
+        verify(productRepository).findBySku("SKU-001");
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when updating status for non-existent product")
+    void testProductStatusUpdate_NotFound() {
+        // Arrange
+        when(productRepository.findBySku("INVALID")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> productServices.productStatusUpdate("INVALID", true))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Product with SKU INVALID not found");
+
+        verify(productRepository).findBySku("INVALID");
+    }
+
+    @Test
+    @DisplayName("Should deactivate product when shipped/delivered orders exist")
+    void testProductStatusUpdate_WithShippedOrders() {
+        // Arrange - Shipped orders should NOT block deactivation
+        SalesOrder shippedSalesOrder = SalesOrder.builder()
+                .id(UUID.randomUUID())
+                .status(OrderStatus.SHIPPED)
+                .build();
+        
+        SalesOrderLine salesOrderLine = SalesOrderLine.builder()
+                .id(UUID.randomUUID())
+                .salesOrder(shippedSalesOrder)
+                .product(product)
+                .build();
+        
+        product.setSalesOrderLines(List.of(salesOrderLine));
+        product.setInventory(List.of());  // No inventory
+        product.setActive(true);
+        
+        when(productRepository.findBySku("SKU-001")).thenReturn(Optional.of(product));
+        when(productRepository.save(product)).thenReturn(product);
+
+        // Act - Should succeed because SHIPPED is not CREATED or RESERVED
+        Product result = productServices.productStatusUpdate("SKU-001", false);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getActive()).isFalse();
+        verify(productRepository).findBySku("SKU-001");
+        verify(productRepository).save(product);
     }
 }

@@ -1,43 +1,57 @@
 package com.logitrack.logitrack.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logitrack.logitrack.dtos.SupplierDTO;
 import com.logitrack.logitrack.services.SupplierService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("SupplierController Unit Tests")
+@DisplayName("SupplierControllerTest")
 class SupplierControllerTest {
+
+    private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
 
     @Mock
     private SupplierService supplierService;
 
-    @InjectMocks
-    private SupplierController supplierController;
-
-    private UUID supplierId;
     private SupplierDTO supplierDTO;
+    private SupplierDTO supplierRespDTO;
+    private UUID supplierId;
 
     @BeforeEach
     void setUp() {
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(new SupplierController(supplierService))
+                .build();
+        objectMapper = new ObjectMapper();
+
         supplierId = UUID.randomUUID();
         supplierDTO = SupplierDTO.builder()
+                .name("Test Supplier")
+                .contactInfo("contact@supplier.com")
+                .build();
+
+        supplierRespDTO = SupplierDTO.builder()
                 .id(supplierId.toString())
                 .name("Test Supplier")
                 .contactInfo("contact@supplier.com")
@@ -45,87 +59,107 @@ class SupplierControllerTest {
     }
 
     @Test
-    @DisplayName("Should add supplier and return CREATED status")
-    void testAddSupplier() {
-        when(supplierService.addSupplier(any(SupplierDTO.class)))
-                .thenReturn(supplierDTO);
+    @DisplayName("Should add supplier successfully")
+    void testAddSupplier() throws Exception {
+        when(supplierService.addSupplier(any(SupplierDTO.class))).thenReturn(supplierRespDTO);
 
-        ResponseEntity<SupplierDTO> result = supplierController.addSupplier(supplierDTO);
+        ResultActions response = mockMvc.perform(post("/api/suppliers/add")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(supplierDTO)));
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.CREATED, result.getStatusCode());
-        assertEquals(supplierDTO, result.getBody());
+        response.andDo(print())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Test Supplier"))
+                .andExpect(jsonPath("$.contactInfo").value("contact@supplier.com"));
+
         verify(supplierService).addSupplier(any(SupplierDTO.class));
     }
 
     @Test
-    @DisplayName("Should get all suppliers and return OK status")
-    void testGetAllSuppliers() {
-        when(supplierService.getAllSuppliers())
-                .thenReturn(Arrays.asList(supplierDTO));
+    @DisplayName("Should retrieve all suppliers")
+    void testGetAllSuppliers() throws Exception {
+        SupplierDTO supplier2 = SupplierDTO.builder()
+                .id(UUID.randomUUID().toString())
+                .name("Supplier 2")
+                .contactInfo("contact2@supplier.com")
+                .build();
 
-        ResponseEntity<Iterable<SupplierDTO>> result = supplierController.getAllSuppliers();
+        when(supplierService.getAllSuppliers()).thenReturn(List.of(supplierRespDTO, supplier2));
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
+        ResultActions response = mockMvc.perform(get("/api/suppliers/all")
+                .contentType(MediaType.APPLICATION_JSON));
+
+        response.andDo(print())
+                .andExpect(status().isOk());
+
         verify(supplierService).getAllSuppliers();
     }
 
     @Test
-    @DisplayName("Should get supplier by ID and return OK status")
-    void testGetSupplierById() {
-        when(supplierService.getSupplierById(supplierId))
-                .thenReturn(supplierDTO);
+    @DisplayName("Should get supplier by ID successfully")
+    void testGetSupplierById() throws Exception {
+        when(supplierService.getSupplierById(supplierId)).thenReturn(supplierRespDTO);
 
-        ResponseEntity<SupplierDTO> result = supplierController.getSupplierById(supplierId);
+        ResultActions response = mockMvc.perform(get("/api/suppliers/{id}", supplierId)
+                .contentType(MediaType.APPLICATION_JSON));
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(supplierDTO, result.getBody());
+        response.andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Test Supplier"));
+
         verify(supplierService).getSupplierById(supplierId);
     }
 
     @Test
-    @DisplayName("Should update supplier and return OK status")
-    void testUpdateSupplier() {
-        SupplierDTO updatedDTO = SupplierDTO.builder()
+    @DisplayName("Should update supplier successfully")
+    void testUpdateSupplier() throws Exception {
+        SupplierDTO updatedSupplier = SupplierDTO.builder()
                 .id(supplierId.toString())
                 .name("Updated Supplier")
                 .contactInfo("updated@supplier.com")
                 .build();
 
         when(supplierService.updateSupplier(eq(supplierId), any(SupplierDTO.class)))
-                .thenReturn(updatedDTO);
+                .thenReturn(updatedSupplier);
 
-        ResponseEntity<SupplierDTO> result = supplierController.updateSupplier(supplierId, updatedDTO);
+        ResultActions response = mockMvc.perform(put("/api/suppliers/update/{id}", supplierId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(supplierDTO)));
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(updatedDTO, result.getBody());
+        response.andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Updated Supplier"));
+
         verify(supplierService).updateSupplier(eq(supplierId), any(SupplierDTO.class));
     }
 
     @Test
-    @DisplayName("Should delete supplier and return OK status")
-    void testDeleteSupplier() {
-        ResponseEntity<String> result = supplierController.deleteSupplier(supplierId);
+    @DisplayName("Should delete supplier successfully")
+    void testDeleteSupplier() throws Exception {
+        doNothing().when(supplierService).deleteSupplierById(supplierId);
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertTrue(result.getBody().contains("deleted"));
+        ResultActions response = mockMvc.perform(delete("/api/suppliers/delete/{id}", supplierId)
+                .contentType(MediaType.APPLICATION_JSON));
+
+        response.andDo(print())
+                .andExpect(status().isOk());
+
         verify(supplierService).deleteSupplierById(supplierId);
     }
 
     @Test
-    @DisplayName("Should get empty supplier list")
-    void testGetAllSuppliersEmpty() {
-        when(supplierService.getAllSuppliers())
-                .thenReturn(Arrays.asList());
+    @DisplayName("Should handle invalid supplier data on add")
+    void testAddSupplierInvalid() throws Exception {
+        SupplierDTO invalidDTO = SupplierDTO.builder()
+                .name("")
+                .contactInfo("contact@supplier.com")
+                .build();
 
-        ResponseEntity<Iterable<SupplierDTO>> result = supplierController.getAllSuppliers();
+        mockMvc.perform(post("/api/suppliers/add")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        verify(supplierService).getAllSuppliers();
+        verify(supplierService, never()).addSupplier(any());
     }
 }

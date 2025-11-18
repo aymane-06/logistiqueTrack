@@ -1,141 +1,181 @@
 package com.logitrack.logitrack.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logitrack.logitrack.dtos.CarrierDTO;
 import com.logitrack.logitrack.dtos.CarrierRespDTO;
+import com.logitrack.logitrack.models.ENUM.CarrierStatus;
 import com.logitrack.logitrack.services.CarrierService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Arrays;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("CarrierController Unit Tests")
+@DisplayName("CarrierControllerTest")
 class CarrierControllerTest {
+
+    private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
 
     @Mock
     private CarrierService carrierService;
 
-    @InjectMocks
-    private CarrierController carrierController;
-
-    private UUID carrierId;
     private CarrierDTO carrierDTO;
     private CarrierRespDTO carrierRespDTO;
+    private UUID carrierId;
 
     @BeforeEach
     void setUp() {
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(new CarrierController(carrierService))
+                .build();
+        objectMapper = new ObjectMapper();
+
         carrierId = UUID.randomUUID();
         carrierDTO = CarrierDTO.builder()
                 .name("Test Carrier")
-                .contactEmail("carrier@test.com")
-                .contactPhone("123-456-7890")
+                .contactEmail("contact@carrier.com")
+                .contactPhone("1234567890")
                 .build();
 
         carrierRespDTO = CarrierRespDTO.builder()
                 .id(carrierId)
                 .name("Test Carrier")
-                .contactEmail("carrier@test.com")
-                .contactPhone("123-456-7890")
+                .contactEmail("contact@carrier.com")
+                .contactPhone("1234567890")
+                .baseShippingRate(BigDecimal.valueOf(100.00))
+                .maxDailyCapacity(50)
+                .currentDailyShipments(10)
+                .cutOffTime(LocalTime.of(14, 0))
+                .status(CarrierStatus.ACTIVE)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
     }
 
     @Test
-    @DisplayName("Should add carrier and return CREATED status")
-    void testAddCarrier() {
-        when(carrierService.addCarrier(any(CarrierDTO.class)))
-                .thenReturn(carrierRespDTO);
+    @DisplayName("Should add carrier successfully")
+    void testAddCarrier() throws Exception {
+        when(carrierService.addCarrier(any(CarrierDTO.class))).thenReturn(carrierRespDTO);
 
-        ResponseEntity<CarrierRespDTO> result = carrierController.addCarrier(carrierDTO);
+        ResultActions response = mockMvc.perform(post("/api/carriers/add")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(carrierDTO)));
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.CREATED, result.getStatusCode());
-        assertEquals(carrierRespDTO, result.getBody());
+        response.andDo(print())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Test Carrier"))
+                .andExpect(jsonPath("$.contactEmail").value("contact@carrier.com"));
+
         verify(carrierService).addCarrier(any(CarrierDTO.class));
     }
 
     @Test
-    @DisplayName("Should get all carriers and return OK status")
-    void testGetAllCarriers() {
-        when(carrierService.getAllCarriers())
-                .thenReturn(Arrays.asList(carrierRespDTO));
+    @DisplayName("Should retrieve all carriers")
+    void testGetAllCarriers() throws Exception {
+        CarrierRespDTO carrier2 = CarrierRespDTO.builder()
+                .id(UUID.randomUUID())
+                .name("Carrier 2")
+                .contactEmail("contact2@carrier.com")
+                .status(CarrierStatus.ACTIVE)
+                .build();
 
-        ResponseEntity<java.util.List<CarrierRespDTO>> result = carrierController.getAllCarriers();
+        when(carrierService.getAllCarriers()).thenReturn(List.of(carrierRespDTO, carrier2));
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
+        ResultActions response = mockMvc.perform(get("/api/carriers/all")
+                .contentType(MediaType.APPLICATION_JSON));
+
+        response.andDo(print())
+                .andExpect(status().isOk());
+
         verify(carrierService).getAllCarriers();
     }
 
     @Test
-    @DisplayName("Should get carrier by ID and return OK status")
-    void testGetCarrierById() {
-        when(carrierService.getCarrierById(carrierId))
-                .thenReturn(carrierRespDTO);
+    @DisplayName("Should get carrier by ID successfully")
+    void testGetCarrierById() throws Exception {
+        when(carrierService.getCarrierById(carrierId)).thenReturn(carrierRespDTO);
 
-        ResponseEntity<CarrierRespDTO> result = carrierController.getCarrierById(carrierId);
+        ResultActions response = mockMvc.perform(get("/api/carriers/{id}", carrierId)
+                .contentType(MediaType.APPLICATION_JSON));
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(carrierRespDTO, result.getBody());
+        response.andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Test Carrier"));
+
         verify(carrierService).getCarrierById(carrierId);
     }
 
     @Test
-    @DisplayName("Should update carrier and return OK status")
-    void testUpdateCarrier() {
-        CarrierRespDTO updatedDTO = CarrierRespDTO.builder()
+    @DisplayName("Should update carrier successfully")
+    void testUpdateCarrier() throws Exception {
+        CarrierRespDTO updatedCarrier = CarrierRespDTO.builder()
                 .id(carrierId)
                 .name("Updated Carrier")
                 .contactEmail("updated@carrier.com")
-                .contactPhone("999-999-9999")
+                .status(CarrierStatus.ACTIVE)
                 .build();
 
         when(carrierService.updateCarrier(eq(carrierId), any(CarrierDTO.class)))
-                .thenReturn(updatedDTO);
+                .thenReturn(updatedCarrier);
 
-        ResponseEntity<CarrierRespDTO> result = carrierController.updateCarrier(carrierId, carrierDTO);
+        ResultActions response = mockMvc.perform(put("/api/carriers/update/{id}", carrierId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(carrierDTO)));
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(updatedDTO, result.getBody());
+        response.andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Updated Carrier"));
+
         verify(carrierService).updateCarrier(eq(carrierId), any(CarrierDTO.class));
     }
 
     @Test
-    @DisplayName("Should delete carrier and return OK status")
-    void testDeleteCarrier() {
-        ResponseEntity<String> result = carrierController.deleteCarrier(carrierId);
+    @DisplayName("Should delete carrier successfully")
+    void testDeleteCarrier() throws Exception {
+        doNothing().when(carrierService).deleteCarrierById(carrierId);
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertTrue(result.getBody().contains("deleted"));
+        ResultActions response = mockMvc.perform(delete("/api/carriers/delete/{id}", carrierId)
+                .contentType(MediaType.APPLICATION_JSON));
+
+        response.andDo(print())
+                .andExpect(status().isOk());
+
         verify(carrierService).deleteCarrierById(carrierId);
     }
 
     @Test
-    @DisplayName("Should get empty carrier list")
-    void testGetAllCarriersEmpty() {
-        when(carrierService.getAllCarriers())
-                .thenReturn(Arrays.asList());
+    @DisplayName("Should handle invalid carrier data on add")
+    void testAddCarrierInvalid() throws Exception {
+        CarrierDTO invalidDTO = CarrierDTO.builder()
+                .name("")
+                .contactEmail("invalid-email")
+                .build();
 
-        ResponseEntity<java.util.List<CarrierRespDTO>> result = carrierController.getAllCarriers();
+        mockMvc.perform(post("/api/carriers/add")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        verify(carrierService).getAllCarriers();
+        verify(carrierService, never()).addCarrier(any());
     }
 }

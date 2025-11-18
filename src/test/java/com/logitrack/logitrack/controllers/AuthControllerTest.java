@@ -1,47 +1,50 @@
 package com.logitrack.logitrack.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logitrack.logitrack.dtos.User.UserDTO;
 import com.logitrack.logitrack.dtos.User.UserResponseDTO;
 import com.logitrack.logitrack.models.ENUM.Role;
 import com.logitrack.logitrack.services.AuthService;
-import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Map;
-import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AuthController Unit Tests")
+@DisplayName("AuthControllerTest")
 class AuthControllerTest {
+
+    private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
 
     @Mock
     private AuthService authService;
-
-    @Mock
-    private HttpSession httpSession;
-
-    @InjectMocks
-    private AuthController authController;
 
     private UserDTO userDTO;
     private UserResponseDTO userResponseDTO;
 
     @BeforeEach
     void setUp() {
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(new AuthController(authService))
+                .build();
+        objectMapper = new ObjectMapper();
+
         userDTO = new UserDTO();
         userDTO.setEmail("test@example.com");
         userDTO.setPasswordHash("TestPassword123!");
@@ -57,52 +60,69 @@ class AuthControllerTest {
 
     @Test
     @DisplayName("Should register user successfully")
-    void testRegisterSuccess() {
+    void testRegisterSuccess() throws Exception {
         when(authService.registerUser(any(UserDTO.class)))
                 .thenReturn(userResponseDTO);
 
-        ResponseEntity<Map<String, Object>> result = authController.register(userDTO);
+        ResultActions response = mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userDTO)));
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.CREATED, result.getStatusCode());
-        assertTrue(result.getBody().containsKey("message"));
-        assertTrue(result.getBody().containsKey("user"));
+        response.andDo(print())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.message").value("User registered successfully"))
+                .andExpect(jsonPath("$.user.email").value("test@example.com"));
+
         verify(authService).registerUser(any(UserDTO.class));
     }
 
     @Test
     @DisplayName("Should login successfully")
-    void testLoginSuccess() {
-        when(httpSession.getId()).thenReturn("session-123");
-        when(authService.login(anyString(), anyString(), any(HttpSession.class)))
-                .thenReturn(httpSession);
-
+    void testLoginSuccess() throws Exception {
         Map<String, String> loginData = Map.of(
                 "email", "test@example.com",
                 "password", "TestPassword123!"
         );
 
-        String result = authController.login(loginData, httpSession);
+        ResultActions response = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginData)));
 
-        assertNotNull(result);
-        assertTrue(result.contains("Login successful"));
-        verify(authService).login(anyString(), anyString(), any(HttpSession.class));
+        response.andDo(print())
+                .andExpect(status().isOk());
+
+        verify(authService).login(eq("test@example.com"), eq("TestPassword123!"), any());
     }
 
     @Test
     @DisplayName("Should handle login with different credentials")
-    void testLoginWithCredentials() {
-        when(httpSession.getId()).thenReturn("session-456");
-
+    void testLoginWithCredentials() throws Exception {
         Map<String, String> loginData = Map.of(
                 "email", "another@example.com",
                 "password", "AnotherPass123!"
         );
 
-        String result = authController.login(loginData, httpSession);
+        ResultActions response = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginData)));
 
-        assertNotNull(result);
-        assertTrue(result.contains("Session ID"));
-        verify(authService).login("another@example.com", "AnotherPass123!", httpSession);
+        response.andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Login successful")));
+
+        verify(authService).login(eq("another@example.com"), eq("AnotherPass123!"), any());
+    }
+
+    @Test
+    @DisplayName("Should handle invalid user data on register")
+    void testRegisterInvalid() throws Exception {
+        UserDTO invalidDTO = new UserDTO();
+
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
+
+        verify(authService, never()).registerUser(any());
     }
 }

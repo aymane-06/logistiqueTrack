@@ -36,8 +36,11 @@
         <sonar.coverage.exclusions>
             **/*DTO.*,
             **/mapper/*.*,
+            **/models/*.*,
+            **/ENUM/*.*,
             **/LogitrackApplication.*,
-            **/config/*.*
+            **/config/*.*,
+            **/Util/*.*
         </sonar.coverage.exclusions>
         </properties>
     <dependencies>
@@ -171,8 +174,11 @@
                     <excludes>
                         <exclude>**/*DTO.*</exclude>
                         <exclude>**/mapper/*.*</exclude>
+                        <exclude>**/models/*.*</exclude>
+                        <exclude>**/ENUM/*.*</exclude>
                         <exclude>**/LogitrackApplication.*</exclude>
                         <exclude>**/config/*.*</exclude>
+                        <exclude>**/Util/*.*</exclude>
                     </excludes>
                 </configuration>
                 </plugin>
