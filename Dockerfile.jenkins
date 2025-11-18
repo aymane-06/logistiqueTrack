@@ -1,0 +1,28 @@
+# Partir de l'image de base que VOUS voulez
+FROM jenkins/jenkins:lts-jdk17
+
+# Basculer en 'root' pour pouvoir installer des logiciels
+USER root
+
+# Mettre à jour et installer les dépendances pour Docker
+RUN apt-get update && \
+    apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+# Ajouter le dépôt et le client Docker
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+RUN echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+RUN apt-get update && \
+    apt-get install -y docker-ce-cli
+
+# Rebasculer vers l'utilisateur 'jenkins'
+USER jenkins
