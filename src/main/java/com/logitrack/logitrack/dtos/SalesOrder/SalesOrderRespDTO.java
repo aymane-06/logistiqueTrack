@@ -1,15 +1,15 @@
 package com.logitrack.logitrack.dtos.SalesOrder;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import com.logitrack.logitrack.dtos.ClientDTO;
 import com.logitrack.logitrack.dtos.SalesOrder.SalesOrderLine.SalesOrderLineRespDTO;
 import com.logitrack.logitrack.dtos.Warehouse.OrderWarehouseRespDTO;
-import com.logitrack.logitrack.dtos.Warehouse.WarehouseRespDTO;
-import com.logitrack.logitrack.models.ENUM.OrderStatus;
 import com.logitrack.logitrack.models.Shipment;
-import lombok.Data;
+import com.logitrack.logitrack.models.ENUM.OrderStatus;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import lombok.Data;
 
 @Data
 public class SalesOrderRespDTO {

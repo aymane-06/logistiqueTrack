@@ -1,7 +1,7 @@
 package com.logitrack.logitrack.dtos.Inventory;
 
 import com.logitrack.logitrack.dtos.Product.ProductRespDTO;
-import com.logitrack.logitrack.dtos.Warehouse.WarehouseRespDTO;
+
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
