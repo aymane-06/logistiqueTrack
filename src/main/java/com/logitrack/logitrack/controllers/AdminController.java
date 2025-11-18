@@ -29,7 +29,7 @@ public class AdminController {
 
 
     @PatchMapping("/purchaseOrder-status/update/{id}")
-    public ResponseEntity<?> purchaseOrderStatus(@PathVariable UUID id, @RequestBody Map<String, String> requestBody) {
+    public ResponseEntity<PurchaseOrderRespDTO> purchaseOrderStatus(@PathVariable UUID id, @RequestBody Map<String, String> requestBody) {
         PurchaseOrderStatus status = PurchaseOrderStatus.valueOf(requestBody.get("status"));
         PurchaseOrderRespDTO purchaseOrderRespDTO =  purchaseOrderService.parchaseOrderStatusUpdate(id, status);
         return ResponseEntity.ok().body(purchaseOrderRespDTO);

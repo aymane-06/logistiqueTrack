@@ -41,7 +41,7 @@ public class PurchaseOrderConroller {
         return ResponseEntity.ok(updatedPurchaseOrder);
     }
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deletePurchaseOrderById(@PathVariable("id") UUID id) {
+    public ResponseEntity<String> deletePurchaseOrderById(@PathVariable("id") UUID id) {
         PurchaseOrderRespDTO deletedPurchaseOrder = purchaseOrderService.deletePurchaseOrderById(id);
         return ResponseEntity.ok().body("Deleted Purchase Order: " + deletedPurchaseOrder);
     }
