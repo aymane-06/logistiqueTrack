@@ -1,22 +1,12 @@
 package com.logitrack.logitrack.services;
 
-import com.logitrack.logitrack.dtos.Product.ProductRespDTO;
-import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderDTO;
-import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderLine.PurchaseOrderLineDTO;
-import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderLine.PurchaseOrderLineRespDTO;
-import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderRespDTO;
-import com.logitrack.logitrack.dtos.SupplierDTO;
-import com.logitrack.logitrack.dtos.Warehouse.OrderWarehouseRespDTO;
-import com.logitrack.logitrack.dtos.WarehouseManagerDTO;
-import com.logitrack.logitrack.mapper.PurchaseOrderLineMapper;
-import com.logitrack.logitrack.mapper.PurchaseOrderMapper;
-import com.logitrack.logitrack.models.*;
-import com.logitrack.logitrack.models.ENUM.PurchaseOrderStatus;
-import com.logitrack.logitrack.repositories.ProductRepository;
-import com.logitrack.logitrack.repositories.PurchaseOrderRepository;
-import com.logitrack.logitrack.repositories.SupplierRepository;
-import com.logitrack.logitrack.repositories.WarehouseManagerRepository;
-import com.logitrack.logitrack.repositories.WarehouseRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,33 +14,46 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-
-import static org.mockito.Mockito.when;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.util.UUID;
+import com.logitrack.logitrack.dtos.SupplierDTO;
+import com.logitrack.logitrack.dtos.WarehouseManagerDTO;
+import com.logitrack.logitrack.dtos.Product.ProductRespDTO;
+import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderDTO;
+import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderRespDTO;
+import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderLine.PurchaseOrderLineDTO;
+import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderLine.PurchaseOrderLineRespDTO;
+import com.logitrack.logitrack.dtos.Warehouse.OrderWarehouseRespDTO;
+import com.logitrack.logitrack.mapper.PurchaseOrderMapperImpl;
+import com.logitrack.logitrack.models.Product;
+import com.logitrack.logitrack.models.PurchaseOrder;
+import com.logitrack.logitrack.models.PurchaseOrderLine;
+import com.logitrack.logitrack.models.Supplier;
+import com.logitrack.logitrack.models.WAREHOUSE_MANAGER;
+import com.logitrack.logitrack.models.Warehouse;
+import com.logitrack.logitrack.models.ENUM.PurchaseOrderStatus;
+import com.logitrack.logitrack.repositories.ProductRepository;
+import com.logitrack.logitrack.repositories.PurchaseOrderRepository;
+import com.logitrack.logitrack.repositories.SupplierRepository;
+import com.logitrack.logitrack.repositories.WarehouseRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PurchaseOrderServices Tests")
 public class PurchaseOrderServicesTest {
     @Mock
-    private  PurchaseOrderRepository purchaseOrderRepository;
+    private PurchaseOrderRepository purchaseOrderRepository;
     @Mock
-    private  PurchaseOrderMapper purchaseOrderMapper;
+    private SupplierRepository supplierRepository;
+
     @Mock
-    private  ProductRepository productRepository;
+    private ProductRepository productRepository;
+
     @Mock
-    private  SupplierRepository supplierRepository;
-    @Mock
-    private  WarehouseRepository warehouseRepository;
-    @Mock
-    private  WarehouseManagerRepository warehouseManagerRepository;
-    @Mock
-    protected  PurchaseOrderLineMapper purchaseOrderLineMapper;   
+    private WarehouseRepository warehouseRepository;
+
+    @Spy
+    private PurchaseOrderMapperImpl purchaseOrderMapper;
 
     @InjectMocks
     private PurchaseOrderService purchaseOrderService;
@@ -78,10 +81,6 @@ public class PurchaseOrderServicesTest {
     private UUID warehouseManagerId;
     private UUID purchaseOrderLineId;
 
-
-
-
-
     @BeforeEach
     void setUp() {
         purchaseOrderId = UUID.randomUUID();
@@ -90,6 +89,10 @@ public class PurchaseOrderServicesTest {
         warehouseId = UUID.randomUUID();
         warehouseManagerId = UUID.randomUUID();
         purchaseOrderLineId = UUID.randomUUID();
+        // Initialize mapper dependencies
+        purchaseOrderMapper.setSupplierRepository(supplierRepository);
+        purchaseOrderMapper.setProductRepository(productRepository);
+        purchaseOrderMapper.setWarehouseRepository(warehouseRepository);
 
 
 
@@ -200,9 +203,9 @@ public class PurchaseOrderServicesTest {
     @DisplayName("Should create purchase order successfully")
     void shouldCreatePurchaseOrderSuccessfully() {
         //Arrange
-        when(purchaseOrderMapper.toEntity(purchaseOrderDTO)).thenReturn(purchaseOrder);
+        doReturn(purchaseOrder).when(purchaseOrderMapper).toEntity(purchaseOrderDTO);
         when(purchaseOrderRepository.save(purchaseOrder)).thenReturn(purchaseOrder);
-        when(purchaseOrderMapper.toResponseDTO(purchaseOrder)).thenReturn(purchaseOrderRespDTO);
+        doReturn(purchaseOrderRespDTO).when(purchaseOrderMapper).toResponseDTO(purchaseOrder);
         
         // Act
         PurchaseOrderRespDTO createdPurchaseOrder = purchaseOrderService.createPurchaseOrder(purchaseOrderDTO);
@@ -229,18 +232,17 @@ public class PurchaseOrderServicesTest {
             // Arrange
             when(purchaseOrderRepository.findById(purchaseOrderId))
                     .thenReturn(java.util.Optional.ofNullable(purchaseOrder));
-            when(purchaseOrderMapper.toResponseDTO(purchaseOrder))
-                    .thenReturn(purchaseOrderRespDTO);
+            doReturn(purchaseOrderRespDTO).when(purchaseOrderMapper).toResponseDTO(purchaseOrder);
                 // Act
                 PurchaseOrderRespDTO fetchedPurchaseOrder = purchaseOrderService.getPurchaseOrderById(purchaseOrderId);
                 // Assert
-                assert fetchedPurchaseOrder != null;
-                assert fetchedPurchaseOrder.getId().equals(purchaseOrderId);
-                assert fetchedPurchaseOrder.getSupplier().getId().equals(supplierId.toString());
-                assert fetchedPurchaseOrder.getWarehouse().getId().equals(warehouseId);
-                assert fetchedPurchaseOrder.status.equals("CREATED");
-                assert fetchedPurchaseOrder.getLines().size() == 1;
-                assert fetchedPurchaseOrder.getLines().get(0).getProduct().getId().equals(productId);
+                assertThat(fetchedPurchaseOrder).isNotNull();
+                assertThat(fetchedPurchaseOrder.getId()).isEqualTo(purchaseOrderId);
+                assertThat(fetchedPurchaseOrder.getSupplier().getId()).isEqualTo(supplierId.toString());
+                assertThat(fetchedPurchaseOrder.getWarehouse().getId()).isEqualTo(warehouseId);
+                assertThat(fetchedPurchaseOrder.status).isEqualTo("CREATED");
+                assertThat(fetchedPurchaseOrder.getLines()).hasSize(1);
+                assertThat(fetchedPurchaseOrder.getLines().get(0).getProduct().getId()).isEqualTo(productId);
                 // Verify interactions
                 verify(purchaseOrderRepository).findById(purchaseOrderId);
                 verify(purchaseOrderMapper).toResponseDTO(purchaseOrder); 
@@ -280,8 +282,7 @@ public class PurchaseOrderServicesTest {
                     .thenReturn(java.util.Optional.ofNullable(purchaseOrder));
             when(purchaseOrderRepository.save(purchaseOrder))
                     .thenReturn(purchaseOrder);
-            when(purchaseOrderMapper.toResponseDTO(purchaseOrder))
-                    .thenReturn(purchaseOrderRespDTO);
+            doReturn(purchaseOrderRespDTO).when(purchaseOrderMapper).toResponseDTO(purchaseOrder);
             
             // Act
             PurchaseOrderRespDTO updatedPurchaseOrder = purchaseOrderService.updatePurchaseOrder(purchaseOrderId, updateDTO);
@@ -364,8 +365,9 @@ public class PurchaseOrderServicesTest {
                     .thenReturn(java.util.Optional.ofNullable(purchaseOrder));
             when(purchaseOrderRepository.save(purchaseOrder))
                     .thenReturn(purchaseOrder);
-            when(purchaseOrderMapper.toResponseDTO(purchaseOrder))
-                    .thenReturn(purchaseOrderRespDTO);
+            doReturn(purchaseOrderRespDTO)
+                    .when(purchaseOrderMapper)
+                    .toResponseDTO(purchaseOrder);
                 // Act
                 PurchaseOrderRespDTO updatedPurchaseOrder = purchaseOrderService.parchaseOrderStatusUpdate(purchaseOrderId, PurchaseOrderStatus.RECEIVED);
                 // Assert
@@ -425,8 +427,9 @@ public class PurchaseOrderServicesTest {
             // Arrange  
             when(purchaseOrderRepository.findAll())
                     .thenReturn(java.util.List.of(purchaseOrder));
-            when(purchaseOrderMapper.toResponseDTO(purchaseOrder))
-                    .thenReturn(purchaseOrderRespDTO);
+            doReturn(purchaseOrderRespDTO)
+                    .when(purchaseOrderMapper)
+                    .toResponseDTO(purchaseOrder);
                 // Act
                 java.util.List<PurchaseOrderRespDTO> purchaseOrders = purchaseOrderService.getAllPurchaseOrders();
                 // Assert
@@ -450,8 +453,10 @@ public class PurchaseOrderServicesTest {
         @Test
         @DisplayName("Should throw exception when creating purchase order with invalid supplier")
         void shouldThrowExceptionWhenCreatingPurchaseOrderWithInvalidSupplier() {
-            // Arrange - mapper returns null when unable to map
-            when(purchaseOrderMapper.toEntity(purchaseOrderDTO)).thenReturn(null);
+            // Arrange - spy mapper will return null when unable to map
+            doReturn(null)
+                    .when(purchaseOrderMapper)
+                    .toEntity(purchaseOrderDTO);
             
             // Act & Assert - service will throw NPE when trying to access null entity
             assertThrows(
@@ -464,8 +469,10 @@ public class PurchaseOrderServicesTest {
         @Test
         @DisplayName("Should throw exception when creating purchase order with invalid warehouse")
         void shouldThrowExceptionWhenCreatingPurchaseOrderWithInvalidWarehouse() {
-            // Arrange - mapper returns null when unable to map
-            when(purchaseOrderMapper.toEntity(purchaseOrderDTO)).thenReturn(null);
+            // Arrange - spy mapper will return null when unable to map
+            doReturn(null)
+                    .when(purchaseOrderMapper)
+                    .toEntity(purchaseOrderDTO);
             
             // Act & Assert - service will throw NPE when trying to access null entity
             assertThrows(
@@ -478,8 +485,10 @@ public class PurchaseOrderServicesTest {
         @Test
         @DisplayName("Should throw exception when creating purchase order with invalid product")
         void shouldThrowExceptionWhenCreatingPurchaseOrderWithInvalidProduct() {
-            // Arrange - mapper returns null when unable to map
-            when(purchaseOrderMapper.toEntity(purchaseOrderDTO)).thenReturn(null);
+            // Arrange - spy mapper will return null when unable to map
+            doReturn(null)
+                    .when(purchaseOrderMapper)
+                    .toEntity(purchaseOrderDTO);
             
             // Act & Assert - service will throw NPE when trying to access null entity
             assertThrows(
@@ -550,8 +559,9 @@ public class PurchaseOrderServicesTest {
                     .thenReturn(java.util.Optional.ofNullable(purchaseOrder));
             when(purchaseOrderRepository.save(purchaseOrder))
                     .thenReturn(purchaseOrder);
-            when(purchaseOrderMapper.toResponseDTO(purchaseOrder))
-                    .thenReturn(purchaseOrderRespDTO);
+            doReturn(purchaseOrderRespDTO)
+                    .when(purchaseOrderMapper)
+                    .toResponseDTO(purchaseOrder);
                 // Act
                 PurchaseOrderRespDTO updatedPurchaseOrder = purchaseOrderService.parchaseOrderStatusUpdate(purchaseOrderId, PurchaseOrderStatus.APPROVED);
                 // Assert
@@ -576,8 +586,9 @@ public class PurchaseOrderServicesTest {
                     .thenReturn(java.util.Optional.ofNullable(purchaseOrder));
             when(purchaseOrderRepository.save(purchaseOrder))
                     .thenReturn(purchaseOrder);
-            when(purchaseOrderMapper.toResponseDTO(purchaseOrder))
-                    .thenReturn(purchaseOrderRespDTO);
+            doReturn(purchaseOrderRespDTO)
+                    .when(purchaseOrderMapper)
+                    .toResponseDTO(purchaseOrder);
                 // Act
                 PurchaseOrderRespDTO updatedPurchaseOrder = purchaseOrderService.parchaseOrderStatusUpdate(purchaseOrderId, PurchaseOrderStatus.CANCELED);
                 // Assert

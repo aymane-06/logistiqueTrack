@@ -7,19 +7,18 @@ import com.logitrack.logitrack.repositories.ProductRepository;
 import com.logitrack.logitrack.repositories.SupplierRepository;
 import com.logitrack.logitrack.repositories.WarehouseManagerRepository;
 import com.logitrack.logitrack.repositories.WarehouseRepository;
+import lombok.Setter;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.springframework.beans.factory.annotation.Autowired;
 
-// PurchaseOrderMapper.java
+
 @Mapper(componentModel = "spring")
+@Setter
 public abstract class PurchaseOrderMapper {
     @Autowired
-    protected  PurchaseOrderLineMapper purchaseOrderLineMapper;
-    @Autowired
     protected  SupplierRepository supplierRepository;
-    @Autowired
-    protected  WarehouseManagerRepository warehouseManagerRepository;
+    @Setter
     @Autowired
     protected  ProductRepository productRepository;
     @Autowired
@@ -89,5 +88,6 @@ public abstract class PurchaseOrderMapper {
         }
     }
     public abstract PurchaseOrderRespDTO toResponseDTO(PurchaseOrder purchaseOrder);
+
 }
 
