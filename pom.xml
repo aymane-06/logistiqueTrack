@@ -148,6 +148,12 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.1.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -192,7 +198,7 @@
                         <include>**/*Test.java</include>
                         <include>**/*Tests.java</include>
                     </includes>
-                    <argLine>${argLine} -Dnet.bytebuddy.experimental=true</argLine>
+                    <argLine>${jacocoArgLine} -Dnet.bytebuddy.experimental=true</argLine>
                 </configuration>
             </plugin>
             
@@ -212,6 +218,7 @@
                             <version>1.5.5.Final</version>
                         </path>
                     </annotationProcessorPaths>
+                    <release>${java.version}</release>
                 </configuration>
             </plugin>
             
