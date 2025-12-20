@@ -1,11 +1,11 @@
 package com.logitrack.logitrack.controllers;
 
+import com.logitrack.logitrack.dtos.Auth.AuthenticationResponse;
 import com.logitrack.logitrack.dtos.User.UserDTO;
 import com.logitrack.logitrack.dtos.User.UserResponseDTO;
-
 import com.logitrack.logitrack.services.AuthService;
-
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,10 +22,9 @@ public class AuthController {
 
     private final AuthService authService;
 
-
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> register(@Valid @RequestBody UserDTO userDTO) {
-        UserResponseDTO userResponseDTO= authService.registerUser(userDTO);
+        UserResponseDTO userResponseDTO = authService.registerUser(userDTO);
         Map<String, Object> response = new HashMap<>();
         response.put("message", "User registered successfully");
         response.put("user", userResponseDTO);
@@ -34,13 +33,19 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody Map<String, String> requestBody, HttpSession session) {
+    public ResponseEntity<AuthenticationResponse> login(@RequestBody Map<String, String> requestBody) {
         String email = requestBody.get("email");
         String password = requestBody.get("password");
 
-        authService.login(email, password,session);
+        // Appelle le service qui va authentifier et générer les jetons
+        AuthenticationResponse response = authService.authenticate(email, password);
 
-        return "Login successful. Session ID: " + session.getId()+" "+ session.getAttribute(session.getId());
+        return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthenticationResponse> refreshToken(HttpServletRequest request) {
+        // Appelle le service pour régénérer un Access Token à partir du Refresh Token
+        return ResponseEntity.ok(authService.refreshToken(request));
+    }
 }
