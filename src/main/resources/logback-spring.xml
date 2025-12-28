@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Define properties -->
+    <property name="APP_NAME" value="logitrack"/>
+    <property name="LOG_PATH" value="logs"/>
+    <springProperty scope="context" name="ENVIRONMENT" source="spring.profiles.active" defaultValue="dev"/>
+    
+    <!-- Console Appender - Human readable for development -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- JSON File Appender - For Elasticsearch/Logstash -->
+    <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/application.json</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/application.%d{yyyy-MM-dd}.json</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"application":"${APP_NAME}","environment":"${ENVIRONMENT}"}</customFields>
+            <!-- Include caller data for better traceability -->
+            <includeCallerData>true</includeCallerData>
+            <!-- Include context (MDC) -->
+            <includeContext>true</includeContext>
+            <!-- Include stack traces -->
+            <includeMdc>true</includeMdc>
+            <includeStructuredArguments>true</includeStructuredArguments>
+        </encoder>
+    </appender>
+
+    <!-- Security Audit Log - Dedicated file for security events -->
+    <appender name="SECURITY_AUDIT_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/security-audit.json</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/security-audit.%d{yyyy-MM-dd}.json</fileNamePattern>
+            <maxHistory>90</maxHistory>
+            <totalSizeCap>2GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"application":"${APP_NAME}","environment":"${ENVIRONMENT}","log_type":"security_audit"}</customFields>
+            <includeCallerData>true</includeCallerData>
+            <includeContext>true</includeContext>
+            <includeMdc>true</includeMdc>
+        </encoder>
+    </appender>
+
+    <!-- Business Audit Log - For order lifecycle, inventory movements -->
+    <appender name="BUSINESS_AUDIT_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/business-audit.json</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/business-audit.%d{yyyy-MM-dd}.json</fileNamePattern>
+            <maxHistory>90</maxHistory>
+            <totalSizeCap>2GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"application":"${APP_NAME}","environment":"${ENVIRONMENT}","log_type":"business_audit"}</customFields>
+            <includeCallerData>true</includeCallerData>
+            <includeContext>true</includeContext>
+            <includeMdc>true</includeMdc>
+        </encoder>
+    </appender>
+
+    <!-- Logger for Security Audit Service -->
+    <logger name="com.logitrack.logitrack.audit.SecurityAuditService" level="INFO" additivity="false">
+        <appender-ref ref="SECURITY_AUDIT_FILE"/>
+        <appender-ref ref="JSON_FILE"/>
+    </logger>
+
+    <!-- Logger for Business Audit Service -->
+    <logger name="com.logitrack.logitrack.audit.BusinessAuditService" level="INFO" additivity="false">
+        <appender-ref ref="BUSINESS_AUDIT_FILE"/>
+        <appender-ref ref="JSON_FILE"/>
+    </logger>
+
+    <!-- Spring Security logs -->
+    <logger name="org.springframework.security" level="INFO"/>
+    
+    <!-- Application logs -->
+    <logger name="com.logitrack.logitrack" level="INFO"/>
+
+    <!-- Root logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="JSON_FILE"/>
+    </root>
+</configuration>

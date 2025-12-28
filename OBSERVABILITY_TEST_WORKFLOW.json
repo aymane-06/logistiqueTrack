@@ -1,0 +1,971 @@
+{
+	"info": {
+		"_postman_id": "observability-test-workflow-2025",
+		"name": "🔍 Observability Complete Test Workflow",
+		"description": "Complete workflow to generate all types of logs (Application, Security, Business) for Kibana visualization testing. This will populate all 3 Elasticsearch indices.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "📋 SETUP INSTRUCTIONS",
+			"item": [
+				{
+					"name": "README - How to Use This Collection",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080"
+						},
+						"description": "## 🎯 Purpose\nThis collection generates logs for all 3 Elasticsearch indices:\n1. logitrack-application-* (always active)\n2. logitrack-security-* (auth events)\n3. logitrack-business-* (orders, inventory, shipments)\n\n## 📝 Before Starting\n1. Ensure app is running: `./mvnw spring-boot:run`\n2. Ensure ELK stack is running: `docker-compose ps`\n3. Check Elasticsearch: `curl http://localhost:9200/_cluster/health`\n\n## 🚀 Execution Order\nRun requests in sequence from Phase 1 to Phase 5.\nAfter each phase, check logs/business-audit.json to see events.\n\n## 🔑 Variables to Update\nAfter each request that creates a resource, copy the ID from response and update the collection variables:\n- WAREHOUSE_MANAGER_ID\n- CLIENT_ID\n- WAREHOUSE_ID\n- SUPPLIER_ID\n- PRODUCT_ID\n- CARRIER_ID\n- PURCHASE_ORDER_ID\n- SALES_ORDER_ID\n\n## ✅ Verification\nAfter completion, check indices:\n```bash\ncurl http://localhost:9200/_cat/indices?v | grep logitrack\n```\n\nYou should see 3 indices with documents."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔐 PHASE 1: Security Logs Generation",
+			"item": [
+				{
+					"name": "1.1 ❌ Failed Login (Generate security log)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"console.log(\"✅ Security audit log generated: authentication_failure\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"wrong@email.com\",\n  \"password\": \"WrongPassword123!\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/auth/login",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Triggers: authentication_failure security log"
+					},
+					"response": []
+				},
+				{
+					"name": "1.2 ✅ Register Warehouse Manager",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.userId) {",
+									"    pm.collectionVariables.set(\"WAREHOUSE_MANAGER_ID\", jsonData.userId);",
+									"    console.log(\"✅ WAREHOUSE_MANAGER_ID: \" + jsonData.userId);",
+									"}",
+									"console.log(\"✅ Security audit log generated: user_registration\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Warehouse Manager\",\n  \"email\": \"test.wh.manager@logitrack.com\",\n  \"passwordHash\": \"SecurePass123!\",\n  \"role\": \"WAREHOUSE_MANAGER\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/auth/register",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Triggers: user_registration security log"
+					},
+					"response": []
+				},
+				{
+					"name": "1.3 ✅ Login Warehouse Manager",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.collectionVariables.set(\"WH_MANAGER_TOKEN\", jsonData.accessToken);",
+									"    console.log(\"✅ WH Manager Token saved\");",
+									"}",
+									"console.log(\"✅ Security audit log generated: authentication_success\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test.wh.manager@logitrack.com\",\n  \"password\": \"SecurePass123!\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/auth/login",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Triggers: authentication_success security log"
+					},
+					"response": []
+				},
+				{
+					"name": "1.4 ✅ Register Client",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.userId) {",
+									"    pm.collectionVariables.set(\"CLIENT_ID\", jsonData.userId);",
+									"    console.log(\"✅ CLIENT_ID: \" + jsonData.userId);",
+									"}",
+									"console.log(\"✅ Security audit log generated: user_registration\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Client Company\",\n  \"email\": \"test.client@logitrack.com\",\n  \"passwordHash\": \"ClientPass123!\",\n  \"role\": \"CLIENT\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/auth/register",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Triggers: user_registration security log"
+					},
+					"response": []
+				},
+				{
+					"name": "1.5 ✅ Login Client",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.collectionVariables.set(\"CLIENT_TOKEN\", jsonData.accessToken);",
+									"    console.log(\"✅ Client Token saved\");",
+									"}",
+									"console.log(\"✅ Security audit log generated: authentication_success\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test.client@logitrack.com\",\n  \"password\": \"ClientPass123!\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/auth/login",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Triggers: authentication_success security log"
+					},
+					"response": []
+				}
+			],
+			"description": "Generates security audit logs:\n- authentication_failure\n- user_registration (x2)\n- authentication_success (x2)"
+		},
+		{
+			"name": "🏗️ PHASE 2: Infrastructure Setup (ADMIN Required)",
+			"item": [
+				{
+					"name": "2.0 ✅ Register ADMIN User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.userId) {",
+									"    pm.collectionVariables.set(\"ADMIN_ID\", jsonData.userId);",
+									"    console.log(\"✅ ADMIN_ID: \" + jsonData.userId);",
+									"}",
+									"console.log(\"✅ Security audit log generated: user_registration\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Admin User\",\n  \"email\": \"admin@logitrack.com\",\n  \"passwordHash\": \"AdminPass123!\",\n  \"role\": \"ADMIN\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/auth/register",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Register ADMIN user for infrastructure setup"
+					},
+					"response": []
+				},
+				{
+					"name": "2.0b ✅ Login ADMIN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.collectionVariables.set(\"ADMIN_TOKEN\", jsonData.accessToken);",
+									"    console.log(\"✅ Admin Token saved\");",
+									"}",
+									"console.log(\"✅ Security audit log generated: authentication_success\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@logitrack.com\",\n  \"password\": \"AdminPass123!\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/auth/login",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Login ADMIN to get token for infrastructure operations"
+					},
+					"response": []
+				},
+				{
+					"name": "2.1 Create Warehouse (ADMIN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.warehouseId) {",
+									"    pm.collectionVariables.set(\"WAREHOUSE_ID\", jsonData.warehouseId);",
+									"    console.log(\"✅ WAREHOUSE_ID: \" + jsonData.warehouseId);",
+									"}",
+									"if (jsonData.code) {",
+									"    pm.collectionVariables.set(\"WAREHOUSE_CODE\", jsonData.code);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Warehouse NYC\",\n  \"location\": \"New York City\",\n  \"warehouseManagerId\": \"{{WAREHOUSE_MANAGER_ID}}\",\n  \"active\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/warehouses/initialize",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "warehouses", "initialize"]
+						},
+						"description": "Only ADMIN can create warehouses"
+					},
+					"response": []
+				},
+				{
+					"name": "2.2 Create Supplier (ADMIN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.supplierId) {",
+									"    pm.collectionVariables.set(\"SUPPLIER_ID\", jsonData.supplierId);",
+									"    console.log(\"✅ SUPPLIER_ID: \" + jsonData.supplierId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Tech Supplier\",\n  \"contactInfo\": \"supplier@test.com\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/suppliers/add",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "suppliers", "add"]
+						},
+						"description": "Only ADMIN can create suppliers"
+					},
+					"response": []
+				},
+				{
+					"name": "2.3 Create Product (ADMIN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.productId) {",
+									"    pm.collectionVariables.set(\"PRODUCT_ID\", jsonData.productId);",
+									"    console.log(\"✅ PRODUCT_ID: \" + jsonData.productId);",
+									"}",
+									"console.log(\"✅ Business audit log generated: product_change\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Laptop\",\n  \"category\": \"Electronics\",\n  \"active\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/products/add",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "products", "add"]
+						},
+						"description": "Only ADMIN can create products. Triggers: product_change business log"
+					},
+					"response": []
+				},
+				{
+					"name": "2.4 Create Carrier (ADMIN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.carrierId) {",
+									"    pm.collectionVariables.set(\"CARRIER_ID\", jsonData.carrierId);",
+									"    console.log(\"✅ CARRIER_ID: \" + jsonData.carrierId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test FastShip\",\n  \"contactInfo\": \"fastship@test.com\",\n  \"maxDailyCapacity\": 100,\n  \"currentDailyShipments\": 0,\n  \"cutOffTime\": \"14:00:00\",\n  \"active\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/carriers/add",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "carriers", "add"]
+						},
+						"description": "Only ADMIN can create carriers"
+					},
+					"response": []
+				}
+			],
+			"description": "Infrastructure setup requires ADMIN role. Creates warehouse, supplier, product, and carrier."
+		},
+		{
+			"name": "📦 PHASE 3: Purchase Order (WAREHOUSE_MANAGER)",
+			"item": [
+				{
+					"name": "3.1 Create Purchase Order (WH_MANAGER)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.purchaseOrderId) {",
+									"    pm.collectionVariables.set(\"PURCHASE_ORDER_ID\", jsonData.purchaseOrderId);",
+									"    console.log(\"✅ PURCHASE_ORDER_ID: \" + jsonData.purchaseOrderId);",
+									"}",
+									"console.log(\"✅ Business audit log generated: purchase_order_created\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{WH_MANAGER_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"warehouseId\": \"{{WAREHOUSE_ID}}\",\n  \"supplierId\": \"{{SUPPLIER_ID}}\",\n  \"lines\": [\n    {\n      \"productId\": \"{{PRODUCT_ID}}\",\n      \"quantity\": 100,\n      \"unitPrice\": 500.00\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/purchase-orders/create",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "purchase-orders", "create"]
+						},
+						"description": "WAREHOUSE_MANAGER can create purchase orders. Triggers: purchase_order_created business log"
+					},
+					"response": []
+				},
+				{
+					"name": "3.2 Approve Purchase Order (ADMIN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"✅ Business audit log generated: purchase_order_status_change (PENDING → APPROVED)\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"APPROVED\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/admins/purchaseOrder-status/update/{{PURCHASE_ORDER_ID}}",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "admins", "purchaseOrder-status", "update", "{{PURCHASE_ORDER_ID}}"]
+						},
+						"description": "Only ADMIN can approve purchase orders (/api/admins/**). Triggers: purchase_order_status_change business log"
+					},
+					"response": []
+				},
+				{
+					"name": "3.3 Receive Purchase Order (ADMIN - Inventory IN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"✅ Business audit logs generated:\");",
+									"console.log(\"   - purchase_order_status_change (APPROVED → RECEIVED)\");",
+									"console.log(\"   - inventory_movement (IN - 100 units)\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"RECEIVED\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/admins/purchaseOrder-status/update/{{PURCHASE_ORDER_ID}}",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "admins", "purchaseOrder-status", "update", "{{PURCHASE_ORDER_ID}}"]
+						},
+						"description": "Only ADMIN can update PO status. Triggers:\n- purchase_order_status_change business log\n- inventory_movement business log (IN)"
+					},
+					"response": []
+				}
+			],
+			"description": "Purchase Order workflow:\n- WAREHOUSE_MANAGER creates PO\n- ADMIN approves and receives PO\nGenerates business logs:\n- purchase_order_created\n- purchase_order_status_change (x2)\n- inventory_movement (IN)"
+		},
+		{
+			"name": "🛒 PHASE 4: Sales Order (CLIENT + WAREHOUSE_MANAGER)",
+			"item": [
+				{
+					"name": "4.1 Create Sales Order (CLIENT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.salesOrderId) {",
+									"    pm.collectionVariables.set(\"SALES_ORDER_ID\", jsonData.salesOrderId);",
+									"    console.log(\"✅ SALES_ORDER_ID: \" + jsonData.salesOrderId);",
+									"}",
+									"console.log(\"✅ Business audit log generated: sales_order_created\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{CLIENT_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"clientId\": \"{{CLIENT_ID}}\",\n  \"warehouseId\": \"{{WAREHOUSE_ID}}\",\n  \"lines\": [\n    {\n      \"productId\": \"{{PRODUCT_ID}}\",\n      \"quantity\": 30,\n      \"unitPrice\": 800.00,\n      \"backorder\": false\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/sales-orders/create",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "sales-orders", "create"]
+						},
+						"description": "Only CLIENT can create sales orders (POST /api/sales-orders/**). Triggers: sales_order_created business log"
+					},
+					"response": []
+				},
+				{
+					"name": "4.2 Reserve Sales Order (WH_MANAGER - Stock OUT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"✅ Business audit logs generated:\");",
+									"console.log(\"   - stock_reservation (30 units)\");",
+									"console.log(\"   - sales_order_status_change (CREATED → RESERVED)\");",
+									"console.log(\"   - inventory_movement (OUT - 30 units)\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{WH_MANAGER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/sales-orders/{{SALES_ORDER_ID}}/reserve",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "sales-orders", "{{SALES_ORDER_ID}}", "reserve"]
+						},
+						"description": "WAREHOUSE_MANAGER reserves inventory (PUT /api/sales-orders/**/reserve). Triggers:\n- stock_reservation business log\n- sales_order_status_change business log\n- inventory_movement business log (OUT)"
+					},
+					"response": []
+				},
+				{
+					"name": "4.3 Ship Sales Order (WH_MANAGER)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"✅ Business audit logs generated:\");",
+									"console.log(\"   - shipment_created\");",
+									"console.log(\"   - sales_order_status_change (RESERVED → SHIPPED)\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{WH_MANAGER_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"carrierId\": \"{{CARRIER_ID}}\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/sales-orders/{{SALES_ORDER_ID}}/ship",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "sales-orders", "{{SALES_ORDER_ID}}", "ship"]
+						},
+						"description": "WAREHOUSE_MANAGER ships orders (PUT /api/sales-orders/**/ship). Triggers:\n- shipment_created business log\n- sales_order_status_change business log"
+					},
+					"response": []
+				},
+				{
+					"name": "4.4 Deliver Sales Order (WH_MANAGER)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"✅ Business audit logs generated:\");",
+									"console.log(\"   - shipment_status_change\");",
+									"console.log(\"   - sales_order_status_change (SHIPPED → DELIVERED)\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{WH_MANAGER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/sales-orders/{{SALES_ORDER_ID}}/deliver",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8080",
+							"path": ["api", "sales-orders", "{{SALES_ORDER_ID}}", "deliver"]
+						},
+						"description": "WAREHOUSE_MANAGER delivers orders (PUT /api/sales-orders/**/deliver). Triggers:\n- shipment_status_change business log\n- sales_order_status_change business log"
+					},
+					"response": []
+				}
+			],
+			"description": "Sales Order workflow:\n- CLIENT creates order\n- WAREHOUSE_MANAGER reserves, ships, and delivers\nGenerates business logs:\n- sales_order_created\n- stock_reservation\n- sales_order_status_change (x3)\n- inventory_movement (OUT)\n- shipment_created\n- shipment_status_change"
+		},
+		{
+			"name": "✅ PHASE 5: Verification & Kibana Setup",
+			"item": [
+				{
+					"name": "5.1 Check Elasticsearch Indices",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:9200/_cat/indices?v",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "9200",
+							"path": ["_cat", "indices"],
+							"query": [
+								{
+									"key": "v",
+									"value": null
+								}
+							]
+						},
+						"description": "Verify all 3 indices exist:\n- logitrack-application-*\n- logitrack-security-*\n- logitrack-business-*"
+					},
+					"response": []
+				},
+				{
+					"name": "5.2 Search Security Logs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:9200/logitrack-security-*/_search?size=20&pretty",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "9200",
+							"path": ["logitrack-security-*", "_search"],
+							"query": [
+								{
+									"key": "size",
+									"value": "20"
+								},
+								{
+									"key": "pretty",
+									"value": null
+								}
+							]
+						},
+						"description": "View last 20 security events"
+					},
+					"response": []
+				},
+				{
+					"name": "5.3 Search Business Logs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:9200/logitrack-business-*/_search?size=20&pretty",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "9200",
+							"path": ["logitrack-business-*", "_search"],
+							"query": [
+								{
+									"key": "size",
+									"value": "20"
+								},
+								{
+									"key": "pretty",
+									"value": null
+								}
+							]
+						},
+						"description": "View last 20 business events"
+					},
+					"response": []
+				},
+				{
+					"name": "5.4 Count Logs by Type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:9200/logitrack-*/_count?pretty",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "9200",
+							"path": ["logitrack-*", "_count"],
+							"query": [
+								{
+									"key": "pretty",
+									"value": null
+								}
+							]
+						},
+						"description": "Total count of all logs"
+					},
+					"response": []
+				}
+			],
+			"description": "Verification endpoints to confirm logs are indexed"
+		}
+	],
+	"variable": [
+		{
+			"key": "ADMIN_ID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "ADMIN_TOKEN",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "WAREHOUSE_MANAGER_ID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "WH_MANAGER_TOKEN",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "CLIENT_ID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "CLIENT_TOKEN",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "WAREHOUSE_ID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "WAREHOUSE_CODE",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "SUPPLIER_ID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "PRODUCT_ID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "CARRIER_ID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "PURCHASE_ORDER_ID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "SALES_ORDER_ID",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

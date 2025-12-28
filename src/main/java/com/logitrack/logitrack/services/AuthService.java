@@ -1,5 +1,14 @@
 package com.logitrack.logitrack.services;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.logitrack.logitrack.audit.SecurityAuditService;
 import com.logitrack.logitrack.dtos.Auth.AuthenticationResponse;
 import com.logitrack.logitrack.dtos.User.UserDTO;
 import com.logitrack.logitrack.dtos.User.UserResponseDTO;
@@ -7,15 +16,9 @@ import com.logitrack.logitrack.mapper.UserMapper;
 import com.logitrack.logitrack.models.User;
 import com.logitrack.logitrack.repositories.UserRepository;
 import com.logitrack.logitrack.security.CustomUserDetails;
+
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +30,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
+    private final SecurityAuditService securityAuditService;
 
     /**
      * Enregistre un nouvel utilisateur en utilisant le hachage PasswordEncoder
@@ -50,6 +54,10 @@ public class AuthService {
 
         // 3. Sauvegarde et retour
         userRepository.save(user);
+        
+        // 4. Audit log
+        securityAuditService.logUserRegistration(user.getEmail(), user.getId().toString(), user.getRole().name());
+        
         return userMapper.toResponseDTO(user);
     }
 
@@ -58,27 +66,39 @@ public class AuthService {
      * Remplace la gestion manuelle de session par une réponse Stateless.
      */
     public AuthenticationResponse authenticate(String email, String password) {
-        // 1. Délégation de la vérification à l'AuthenticationManager
-        // Cela vérifie l'email, le mot de passe (via PasswordEncoder) et le statut du compte
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, password)
-        );
+        try {
+            
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(email, password)
+            );
 
-        // 2. Récupération de l'utilisateur pour générer les jetons
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found after authentication"));
+            
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found after authentication"));
 
-        CustomUserDetails userDetails = new CustomUserDetails(user);
+            CustomUserDetails userDetails = new CustomUserDetails(user);
 
-        // 3. Création de l'Access Token (JWT) et du Refresh Token (Persistant)
-        String jwtToken = jwtService.generateToken(userDetails);
-        String refreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
+            
+            String jwtToken = jwtService.generateToken(userDetails);
+            String refreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
 
-        return AuthenticationResponse.builder()
-                .accessToken(jwtToken)
-                .refreshToken(refreshToken)
-                .message("Login successful")
-                .build();
+           
+            securityAuditService.logLoginSuccess(email, user.getId().toString(), user.getRole().name());
+
+            return AuthenticationResponse.builder()
+                    .accessToken(jwtToken)
+                    .refreshToken(refreshToken)
+                    .message("Login successful")
+                    .build();
+        } catch (BadCredentialsException e) {
+            // Audit log - Failure
+            securityAuditService.logLoginFailure(email, "Invalid credentials");
+            throw e;
+        } catch (Exception e) {
+            // Audit log - Failure
+            securityAuditService.logLoginFailure(email, e.getMessage());
+            throw e;
+        }
     }
 
     /**
@@ -95,7 +115,16 @@ public class AuthService {
         refreshToken = authHeader.substring(7);
 
         // Appelle le service de jeton pour valider et créer un nouvel Access Token
-        return refreshTokenService.refreshAccessToken(refreshToken);
+        AuthenticationResponse response = refreshTokenService.refreshAccessToken(refreshToken);
+        
+        // Audit log - Extract user info from new token
+        String newAccessToken = response.getAccessToken();
+        String email = jwtService.extractUsername(newAccessToken);
+        userRepository.findByEmail(email).ifPresent(user -> 
+            securityAuditService.logTokenRefresh(user.getId().toString(), email)
+        );
+        
+        return response;
     }
 
     /**
@@ -109,7 +138,11 @@ public class AuthService {
             String email = jwtService.extractUsername(jwt);
 
             // Supprime le refresh token de la base de données
-            userRepository.findByEmail(email).ifPresent(refreshTokenService::deleteByUser);
+            userRepository.findByEmail(email).ifPresent(user -> {
+                refreshTokenService.deleteByUser(user);
+                // Audit log
+                securityAuditService.logLogout(user.getId().toString(), email);
+            });
         }
     }
 }

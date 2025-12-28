@@ -1,19 +1,24 @@
 package com.logitrack.logitrack.services;
 
-import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderDTO;
-import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderRespDTO;
-import com.logitrack.logitrack.mapper.PurchaseOrderMapper;
-import com.logitrack.logitrack.models.*;
-import com.logitrack.logitrack.models.ENUM.MovementType;
-import com.logitrack.logitrack.models.ENUM.PurchaseOrderStatus;
-import com.logitrack.logitrack.repositories.*;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
+import com.logitrack.logitrack.audit.BusinessAuditService;
+import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderDTO;
+import com.logitrack.logitrack.dtos.PurchaseOrder.PurchaseOrderRespDTO;
+import com.logitrack.logitrack.mapper.PurchaseOrderMapper;
+import com.logitrack.logitrack.models.Inventory;
+import com.logitrack.logitrack.models.InventoryMovement;
+import com.logitrack.logitrack.models.PurchaseOrder;
+import com.logitrack.logitrack.models.ENUM.MovementType;
+import com.logitrack.logitrack.models.ENUM.PurchaseOrderStatus;
+import com.logitrack.logitrack.repositories.PurchaseOrderRepository;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -21,12 +26,22 @@ public class PurchaseOrderService {
 
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final PurchaseOrderMapper purchaseOrderMapper;
+    private final BusinessAuditService businessAuditService;
 
 
     public PurchaseOrderRespDTO createPurchaseOrder(PurchaseOrderDTO purchaseOrderDTO) {
             PurchaseOrder purchaseOrder = purchaseOrderMapper.toEntity(purchaseOrderDTO);
             purchaseOrder.setStatus(PurchaseOrderStatus.CREATED);
         purchaseOrderRepository.save(purchaseOrder);
+        
+        // Log business audit event
+        businessAuditService.logPurchaseOrderCreated(
+            purchaseOrder.getId(),
+            purchaseOrder.getSupplier().getId(),
+            purchaseOrder.getWarehouse().getId(),
+            purchaseOrder.getLines().size()
+        );
+        
             return purchaseOrderMapper.toResponseDTO(purchaseOrder);
     }
 
@@ -64,7 +79,17 @@ public class PurchaseOrderService {
         if(existingPurchaseOrder.getStatus() == PurchaseOrderStatus.RECEIVED) {
             throw new IllegalArgumentException("Cannot update status of a delivered purchase order.");
         }
+        
+        PurchaseOrderStatus oldStatus = existingPurchaseOrder.getStatus();
         existingPurchaseOrder.setStatus(status);
+        
+        // Log business audit event
+        businessAuditService.logPurchaseOrderStatusChange(
+            existingPurchaseOrder.getId(),
+            oldStatus.toString(),
+            status.toString()
+        );
+        
         if(status == PurchaseOrderStatus.RECEIVED) {
             existingPurchaseOrder.setActualDelivery(LocalDateTime.now());
 

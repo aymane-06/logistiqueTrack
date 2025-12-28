@@ -170,6 +170,19 @@
             <version>0.11.5</version>
         </dependency>
 
+        <!-- Logstash Logback Encoder for structured JSON logging -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>7.4</version>
+        </dependency>
+
+        <!-- Logback Classic (already included via spring-boot-starter, but explicit for clarity) -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

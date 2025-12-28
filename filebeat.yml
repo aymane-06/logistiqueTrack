@@ -1,0 +1,73 @@
+filebeat.inputs:
+  # Application JSON logs
+  - type: log
+    enabled: true
+    paths:
+      - /usr/share/filebeat/logs/application*.json
+    json.keys_under_root: true
+    json.add_error_key: true
+    fields:
+      log_source: "application"
+      service: "logitrack"
+
+  # Security audit logs
+  - type: log
+    enabled: true
+    paths:
+      - /usr/share/filebeat/logs/security-audit*.json
+    json.keys_under_root: true
+    json.add_error_key: true
+    fields:
+      log_source: "security_audit"
+      service: "logitrack"
+
+  # Business audit logs
+  - type: log
+    enabled: true
+    paths:
+      - /usr/share/filebeat/logs/business-audit*.json
+    json.keys_under_root: true
+    json.add_error_key: true
+    fields:
+      log_source: "business_audit"
+      service: "logitrack"
+
+# Output to Elasticsearch
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  indices:
+    - index: "logitrack-application-%{+yyyy.MM.dd}"
+      when.equals:
+        fields.log_source: "application"
+    - index: "logitrack-security-%{+yyyy.MM.dd}"
+      when.equals:
+        fields.log_source: "security_audit"
+    - index: "logitrack-business-%{+yyyy.MM.dd}"
+      when.equals:
+        fields.log_source: "business_audit"
+
+# Elasticsearch index templates
+setup.template.name: "logitrack"
+setup.template.pattern: "logitrack-*"
+setup.template.enabled: true
+setup.template.overwrite: false
+
+# Kibana configuration
+setup.kibana:
+  host: "kibana:5601"
+
+# Logging
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0644
+
+# Processors
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~

@@ -55,12 +55,78 @@ services:
     depends_on:
       - postgres
 
+  # Elasticsearch - Log Storage & Indexing
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    container_name: logitrack-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+      - cluster.routing.allocation.disk.threshold_enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - cicd_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Kibana - Log Visualization & Analysis
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.1
+    container_name: logitrack-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=
+    networks:
+      - cicd_net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Filebeat - Log Shipper (reads application logs and sends to Elasticsearch)
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.11.1
+    container_name: logitrack-filebeat
+    user: root
+    volumes:
+      - ./logs:/usr/share/filebeat/logs:ro
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - cicd_net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    command: filebeat -e -strict.perms=false
+
 volumes:
   postgres_data:
   jenkins_data:
   sonarqube_data:
   sonarqube_extensions:
   sonarqube_logs:
+  elasticsearch_data:
 
 networks:
   cicd_net:

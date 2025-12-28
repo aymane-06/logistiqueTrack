@@ -1,7 +1,5 @@
 package com.logitrack.logitrack.config;
 
-import com.logitrack.logitrack.security.JwtAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,9 +11,14 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.logitrack.logitrack.security.JwtAuthenticationFilter;
+
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
@@ -24,7 +27,14 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
-    private final PasswordEncoder passwordEncoder;
+
+    /**
+     * Bean pour encoder les mots de passe avec BCrypt.
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     /**
      * Configuration du fournisseur d'authentification par défaut.
@@ -34,7 +44,7 @@ public class SecurityConfig {
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder);
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
@@ -70,11 +80,11 @@ public class SecurityConfig {
                         // Routes WAREHOUSE_MANAGER : Gère l'inventaire et les expéditions
                         .requestMatchers("/api/purchase-orders/**").hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/sales-orders/all").hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/api/sales-orders/**/reserve", "/api/sales-orders/**/ship", "/api/sales-orders/**/deliver").hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/sales-orders/*/reserve", "/api/sales-orders/*/ship", "/api/sales-orders/*/deliver").hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/suppliers/**", "/api/carriers/**").hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
 
                         // Routes CLIENT : Peut créer des commandes (POST) et consulter (GET)
-                        .requestMatchers(HttpMethod.POST, "/api/sales-orders/**").hasRole("CLIENT")
+                        .requestMatchers(HttpMethod.POST, "/api/sales-orders/**").hasAnyRole("ADMIN","CLIENT")
                         .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAnyRole("ADMIN", "WAREHOUSE_MANAGER", "CLIENT")
 
                         // Toute autre requête nécessite au moins une authentification valide
