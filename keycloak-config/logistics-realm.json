@@ -1,0 +1,149 @@
+{
+    "id": "logistics-realm",
+    "realm": "logistics-realm",
+    "enabled": true,
+    "accessTokenLifespan": 900,
+    "ssoSessionIdleTimeout": 604800,
+    "roles": {
+        "realm": [
+            {
+                "name": "ADMIN",
+                "description": "Full access to all features"
+            },
+            {
+                "name": "WAREHOUSE_MANAGER",
+                "description": "Access to logistics and warehouse features"
+            },
+            {
+                "name": "CLIENT",
+                "description": "Restricted client access"
+            }
+        ]
+    },
+    "groups": [
+        {
+            "name": "admins",
+            "path": "/admins",
+            "realmRoles": [
+                "ADMIN"
+            ]
+        },
+        {
+            "name": "warehouse-managers",
+            "path": "/warehouse-managers",
+            "realmRoles": [
+                "WAREHOUSE_MANAGER"
+            ]
+        },
+        {
+            "name": "clients",
+            "path": "/clients",
+            "realmRoles": [
+                "CLIENT"
+            ]
+        }
+    ],
+    "users": [
+        {
+            "username": "admin_test",
+            "enabled": true,
+            "email": "admin@logitrack.com",
+            "firstName": "Admin",
+            "lastName": "User",
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "password",
+                    "temporary": false
+                }
+            ],
+            "groups": [
+                "admins"
+            ]
+        },
+        {
+            "username": "manager_test",
+            "enabled": true,
+            "email": "manager@logitrack.com",
+            "firstName": "Warehouse",
+            "lastName": "Manager",
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "password",
+                    "temporary": false
+                }
+            ],
+            "groups": [
+                "warehouse-managers"
+            ]
+        },
+        {
+            "username": "client_test",
+            "enabled": true,
+            "email": "client@logitrack.com",
+            "firstName": "Client",
+            "lastName": "User",
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "password",
+                    "temporary": false
+                }
+            ],
+            "groups": [
+                "clients"
+            ]
+        }
+    ],
+    "clients": [
+        {
+            "clientId": "logistics-api",
+            "enabled": true,
+            "bearerOnly": true,
+            "publicClient": false,
+            "protocol": "openid-connect",
+            "attributes": {
+                "access.token.lifespan": "900"
+            },
+            "defaultClientScopes": [
+                "web-origins",
+                "role_list",
+                "profile",
+                "roles",
+                "email"
+            ],
+            "optionalClientScopes": [
+                "address",
+                "phone",
+                "offline_access",
+                "microprofile-jwt"
+            ]
+        },
+        {
+            "clientId": "demo-app",
+            "enabled": true,
+            "publicClient": true,
+            "directAccessGrantsEnabled": true,
+            "protocol": "openid-connect"
+        }
+    ],
+    "eventsEnabled": true,
+    "eventsListeners": [
+        "jboss-logging"
+    ],
+    "enabledEventTypes": [
+        "LOGIN",
+        "LOGIN_ERROR",
+        "REGISTER",
+        "REGISTER_ERROR",
+        "LOGOUT",
+        "LOGOUT_ERROR",
+        "CODE_TO_TOKEN",
+        "CODE_TO_TOKEN_ERROR",
+        "CLIENT_LOGIN",
+        "CLIENT_LOGIN_ERROR"
+    ],
+    "adminEventsEnabled": true,
+    "adminEventsDetailsEnabled": true
+}
