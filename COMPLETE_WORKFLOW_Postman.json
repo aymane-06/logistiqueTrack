@@ -22,7 +22,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"John Warehouse\",\n  \"email\": \"john@warehouse.com\",\n  \"passwordHash\": \"SecurePassword123!\",\n  \"role\": \"WAREHOUSE_MANAGER\"\n}"
+							"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Warehouse\",\n  \"email\": \"john@warehouse.com\",\n  \"passwordHash\": \"SecurePassword123!\",\n  \"role\": \"WAREHOUSE_MANAGER\"\n}"
 						},
 						"url": {
 							"raw": "http://localhost:8080/api/auth/register",
@@ -281,7 +281,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"ABC Tech Store\",\n  \"email\": \"orders@abctech.com\",\n  \"contactInfo\": \"1-800-ABC-TECH\",\n  \"passwordHash\": \"ClientPassword123!\",\n  \"role\": \"CLIENT\"\n}"
+							"raw": "{\n  \"firstName\": \"ABC\",\n  \"lastName\": \"Tech Store\",\n  \"email\": \"orders@abctech.com\",\n  \"passwordHash\": \"ClientPassword123!\",\n  \"role\": \"CLIENT\"\n}"
 						},
 						"url": {
 							"raw": "http://localhost:8080/api/auth/register",

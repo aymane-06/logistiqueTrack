@@ -1,15 +1,17 @@
 package com.logitrack.logitrack.exception;
 
-import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.client.HttpClientErrorException;
 
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
+import jakarta.servlet.http.HttpServletRequest;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -20,6 +22,16 @@ public class GlobalExceptionHandler {
             errors.put(err.getField(), err.getDefaultMessage())
         );
         return ResponseEntity.badRequest().body(errors);
+    }
+
+    @ExceptionHandler(HttpClientErrorException.class)
+    public ResponseEntity<Map<String, String>> handleHttpClientError(HttpClientErrorException ex, HttpServletRequest request) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        error.put("timestamp", Instant.now().toString());
+        error.put("HTTP", String.valueOf(ex.getStatusCode().value()));
+        error.put("path", request.getRequestURI());
+        return ResponseEntity.status(ex.getStatusCode()).body(error);
     }
 
     @ExceptionHandler(RuntimeException.class)
