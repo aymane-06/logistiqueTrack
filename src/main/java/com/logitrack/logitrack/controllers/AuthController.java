@@ -37,7 +37,7 @@ public class AuthController {
         String email = requestBody.get("email");
         String password = requestBody.get("password");
 
-        // Appelle le service qui va authentifier et générer les jetons
+
         AuthenticationResponse response = authService.authenticate(email, password);
 
         return ResponseEntity.ok(response);
@@ -45,7 +45,6 @@ public class AuthController {
 
     @PostMapping("/refresh-token")
     public ResponseEntity<AuthenticationResponse> refreshToken(HttpServletRequest request) {
-        // Appelle le service pour régénérer un Access Token à partir du Refresh Token
         return ResponseEntity.ok(authService.refreshToken(request));
     }
 }

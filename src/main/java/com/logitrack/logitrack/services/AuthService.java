@@ -61,18 +61,10 @@ public class AuthService {
         return userMapper.toResponseDTO(user);
     }
 
-    /**
-     * Authentifie l'utilisateur via Spring Security et génère les jetons JWT.
-     * Remplace la gestion manuelle de session par une réponse Stateless.
-     */
+
     public AuthenticationResponse authenticate(String email, String password) {
         try {
-            
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(email, password)
-            );
 
-            
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new IllegalArgumentException("User not found after authentication"));
 

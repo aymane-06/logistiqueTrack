@@ -24,15 +24,13 @@ public class RefreshTokenService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
 
-    /**
-     * Crée un nouveau Refresh Token ou met à jour celui existant pour un utilisateur.
-     */
+
     @Transactional
     public RefreshToken createRefreshToken(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // On nettoie les anciens jetons pour cet utilisateur
+
         refreshTokenRepository.deleteByUser(user);
 
         RefreshToken refreshToken = RefreshToken.builder()
@@ -44,9 +42,7 @@ public class RefreshTokenService {
         return refreshTokenRepository.save(refreshToken);
     }
 
-    /**
-     * Valide un Refresh Token et génère un nouvel Access Token.
-     */
+
     public AuthenticationResponse refreshAccessToken(String token) {
         return refreshTokenRepository.findByToken(token)
                 .map(this::verifyExpiration)
@@ -62,9 +58,7 @@ public class RefreshTokenService {
                 .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
     }
 
-    /**
-     * Vérifie si le jeton a expiré.
-     */
+
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().isBefore(Instant.now())) {
             refreshTokenRepository.delete(token);
