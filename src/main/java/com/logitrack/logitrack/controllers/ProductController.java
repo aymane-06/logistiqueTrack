@@ -1,8 +1,15 @@
 package com.logitrack.logitrack.controllers;
 
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import com.logitrack.logitrack.dtos.Product.ProductDTO;
 import com.logitrack.logitrack.dtos.Product.ProductRespDTO;
 import com.logitrack.logitrack.services.ProductServices;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -12,11 +19,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,7 +27,7 @@ import java.util.List;
 public class ProductController {
     private final ProductServices productServices;
 
-    @PostMapping("/products/add")
+    @PostMapping("/products")
     @Operation(summary = "Create a new product", description = "Creates a new product in the inventory system. Returns the created product with auto-generated SKU.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Product created successfully",
@@ -63,7 +65,7 @@ public class ProductController {
         ProductRespDTO product = productServices.getProductBySku(sku);
         return ResponseEntity.ok(product);
     }
-    @PutMapping("/products/update/{sku}")
+    @PutMapping("/products/{sku}")
     @Operation(summary = "Update an existing product", description = "Updates product information for a product identified by its SKU. Partial updates are supported.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product updated successfully",
@@ -80,7 +82,7 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.OK).body(productRespDTO);
     }
 
-    @DeleteMapping("/products/delete/{sku}")
+    @DeleteMapping("/products/{sku}")
     @Operation(summary = "Delete a product", description = "Permanently removes a product from the inventory system using its SKU.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product deleted successfully"),

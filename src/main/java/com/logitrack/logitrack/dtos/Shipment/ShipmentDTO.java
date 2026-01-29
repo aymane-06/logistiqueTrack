@@ -1,5 +1,5 @@
 
-package com.logitrack.logitrack.dtos;
+package com.logitrack.logitrack.dtos.Shipment;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

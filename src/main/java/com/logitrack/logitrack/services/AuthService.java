@@ -4,6 +4,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,6 +69,10 @@ public class AuthService {
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new IllegalArgumentException("User not found after authentication"));
 
+            if(!passwordEncoder.matches(password,user.getPasswordHash())){
+                throw new UsernameNotFoundException("Invalid credentials");
+            }
+
             CustomUserDetails userDetails = new CustomUserDetails(user);
 
             
@@ -80,6 +85,7 @@ public class AuthService {
             return AuthenticationResponse.builder()
                     .accessToken(jwtToken)
                     .refreshToken(refreshToken)
+                    .user(userMapper.toResponseDTO(user))
                     .message("Login successful")
                     .build();
         } catch (BadCredentialsException e) {

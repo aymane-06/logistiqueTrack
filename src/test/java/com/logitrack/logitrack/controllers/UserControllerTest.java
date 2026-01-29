@@ -1,24 +1,28 @@
 package com.logitrack.logitrack.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.logitrack.logitrack.models.User;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.logitrack.logitrack.models.User;
+import com.logitrack.logitrack.repositories.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserControllerTest")
@@ -31,10 +35,16 @@ class UserControllerTest {
     private String sessionId;
     private Map<String, String> requestBody;
 
+    @Mock
+    private UserRepository userRepository;
+
+    @InjectMocks
+    private UserController userController;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new UserController())
+                .standaloneSetup(userController)
                 .build();
         objectMapper = new ObjectMapper();
 

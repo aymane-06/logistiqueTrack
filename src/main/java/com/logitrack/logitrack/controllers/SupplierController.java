@@ -26,13 +26,13 @@ public class SupplierController {
     private final SupplierService supplierService;
 
 
-    @PostMapping("/add")
+    @PostMapping("")
     public ResponseEntity<SupplierDTO> addSupplier(@Valid @RequestBody SupplierDTO supplierDTO) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(supplierService.addSupplier(supplierDTO));
     }
 
-    @GetMapping("/all")
+    @GetMapping("")
     public ResponseEntity<Iterable<SupplierDTO>> getAllSuppliers() {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(supplierService.getAllSuppliers());
@@ -44,13 +44,13 @@ public class SupplierController {
                 .body(supplierService.getSupplierById(id));
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<SupplierDTO> updateSupplier(@PathVariable UUID id, @Valid @RequestBody SupplierDTO supplierDTO) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(supplierService.updateSupplier(id, supplierDTO));
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteSupplier(@PathVariable UUID id) {
         supplierService.deleteSupplierById(id);
         return ResponseEntity.status(HttpStatus.OK)

@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring" ,uses = {ShipmentMapper.class})
 public abstract class SalesOrderMapper {
 
     @Autowired

@@ -61,4 +61,7 @@ public class User {
     @LastModifiedDate
     protected LocalDateTime updatedAt;
 
+    @jakarta.persistence.OneToOne(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    private RefreshToken refreshToken;
+
 }

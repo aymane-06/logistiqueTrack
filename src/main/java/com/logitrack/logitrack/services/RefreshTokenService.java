@@ -1,17 +1,20 @@
 package com.logitrack.logitrack.services;
 
+import java.time.Instant;
+import java.util.UUID;
+
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.logitrack.logitrack.dtos.Auth.AuthenticationResponse;
 import com.logitrack.logitrack.models.RefreshToken;
 import com.logitrack.logitrack.models.User;
 import com.logitrack.logitrack.repositories.RefreshTokenRepository;
 import com.logitrack.logitrack.repositories.UserRepository;
 import com.logitrack.logitrack.security.CustomUserDetails;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -28,16 +31,20 @@ public class RefreshTokenService {
     @Transactional
     public RefreshToken createRefreshToken(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-
-        refreshTokenRepository.deleteByUser(user);
-
-        RefreshToken refreshToken = RefreshToken.builder()
-                .user(user)
-                .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusMillis(REFRESH_TOKEN_EXPIRATION))
-                .build();
+        // First, check if a refresh token already exists for this user
+        RefreshToken refreshToken = refreshTokenRepository.findByUserId(user.getId())
+                .map(existingToken -> {
+                    existingToken.setToken(UUID.randomUUID().toString());
+                    existingToken.setExpiryDate(Instant.now().plusMillis(REFRESH_TOKEN_EXPIRATION));
+                    return existingToken;
+                })
+                .orElseGet(() -> RefreshToken.builder()
+                        .user(user)
+                        .token(UUID.randomUUID().toString())
+                        .expiryDate(Instant.now().plusMillis(REFRESH_TOKEN_EXPIRATION))
+                        .build());
 
         return refreshTokenRepository.save(refreshToken);
     }
@@ -69,7 +76,7 @@ public class RefreshTokenService {
 
     @Transactional
     public void deleteByUser(User user) {
-        refreshTokenRepository.deleteByUser(user);
+        refreshTokenRepository.deleteByUserId(user.getId());
     }
 
 }

@@ -1,11 +1,14 @@
 package com.logitrack.logitrack.config;
 
 import com.logitrack.logitrack.models.Admin;
+import com.logitrack.logitrack.models.ENUM.Role;
 import com.logitrack.logitrack.repositories.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.UUID;
 
 @Configuration
 public class AdminSeeder {
@@ -15,11 +18,14 @@ public class AdminSeeder {
         return args -> {
             String adminEmail = "admin@logitrack.com";
             if (userRepository.findByEmail(adminEmail).isEmpty()) {
-                Admin admin = new Admin();
-                admin.setEmail(adminEmail);
-                admin.setPassword(passwordEncoder.encode("admin123"));
-                admin.setFirstName("System");
-                admin.setLastName("Administrator");
+                Admin admin = Admin.builder()
+                        .id(UUID.randomUUID())
+                        .name("Super")
+                        .email(adminEmail)
+                        .active(true)
+                        .passwordHash(passwordEncoder.encode("AdminPass123!"))
+                        .role(Role.ADMIN)
+                        .build();
                 userRepository.save(admin);
                 System.out.println("Admin account created: " + adminEmail);
             } else {

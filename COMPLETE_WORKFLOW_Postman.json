@@ -2,16 +2,29 @@
 	"info": {
 		"_postman_id": "6332c362-1c7a-456c-8bc9-b551d7b08b0e",
 		"name": "Complete End-to-End Workflow 2",
-		"description": "Full workflow: Register WHM → Create WH → Create Supplier → Create Product → Create PO → Approve PO → Deliver PO → Create Client → Create SO → Reserve SO",
+		"description": "Full workflow: Login Admin -> Create WHM (Admin) -> Create WH -> Create Supplier -> Create Product -> Create PO -> Approve PO -> Deliver PO -> Register Client -> Create SO -> Reserve SO",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "39683881"
 	},
 	"item": [
 		{
-			"name": "PHASE 1: Infrastructure Setup",
+			"name": "PHASE 0: Authentication",
 			"item": [
 				{
-					"name": "Step 1: Register Warehouse Manager",
+					"name": "Step 0: Login as Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"ADMIN_TOKEN\", jsonData.accessToken);",
+									"console.log(\"Admin Token set:\", jsonData.accessToken);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -22,10 +35,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"John Warehouse\",\n  \"email\": \"john@warehouse.com\",\n  \"passwordHash\": \"SecurePassword123!\",\n  \"role\": \"WAREHOUSE_MANAGER\"\n}"
+							"raw": "{\n  \"email\": \"admin@logitrack.com\",\n  \"password\": \"AdminPass123!\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/auth/register",
+							"raw": "http://localhost:8080/api/auth/login",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -34,7 +47,58 @@
 							"path": [
 								"api",
 								"auth",
-								"register"
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "PHASE 1: Infrastructure Setup",
+			"item": [
+				{
+					"name": "Step 1: Create Warehouse Manager (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"WAREHOUSE_MANAGER_ID\", jsonData.id);",
+									"console.log(\"WHM ID:\", jsonData.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Warehouse\",\n  \"email\": \"john@warehouse.com\",\n  \"passwordHash\": \"SecurePassword123!\",\n  \"role\": \"WAREHOUSE_MANAGER\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/users",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users"
 							]
 						}
 					},
@@ -48,6 +112,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
 							}
 						],
 						"body": {
@@ -55,7 +123,7 @@
 							"raw": "{\n  \"name\": \"Main Distribution Center\",\n  \"location\": \"Downtown NYC\",\n  \"warehouseManagerId\": \"{{WAREHOUSE_MANAGER_ID}}\",\n  \"active\": true\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/warehouses/initialize",
+							"raw": "http://localhost:8080/api/warehouses",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -63,8 +131,7 @@
 							"port": "8080",
 							"path": [
 								"api",
-								"warehouses",
-								"initialize"
+								"warehouses"
 							]
 						}
 					},
@@ -78,6 +145,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
 							}
 						],
 						"body": {
@@ -85,7 +156,7 @@
 							"raw": "{\n  \"name\": \"Tech Supplies Inc\",\n  \"contactInfo\": \"1-800-TECH-SUP\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/suppliers/add",
+							"raw": "http://localhost:8080/api/suppliers",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -93,10 +164,21 @@
 							"port": "8080",
 							"path": [
 								"api",
-								"suppliers",
-								"add"
+								"suppliers"
 							]
-						}
+						},
+                        "event": [
+                            {
+                                "listen": "test",
+                                "script": {
+                                    "exec": [
+                                        "var jsonData = pm.response.json();",
+                                        "pm.environment.set(\"SUPPLIER_ID\", jsonData.id);"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            }
+                        ]
 					},
 					"response": []
 				},
@@ -108,6 +190,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
 							}
 						],
 						"body": {
@@ -115,7 +201,7 @@
 							"raw": "{\n  \"name\": \"Laptop Computer\",\n  \"category\": \"Electronics\",\n  \"active\": true\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/products/add",
+							"raw": "http://localhost:8080/api/products",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -123,10 +209,21 @@
 							"port": "8080",
 							"path": [
 								"api",
-								"products",
-								"add"
+								"products"
 							]
-						}
+						},
+                        "event": [
+                            {
+                                "listen": "test",
+                                "script": {
+                                    "exec": [
+                                        "var jsonData = pm.response.json();",
+                                        "pm.environment.set(\"PRODUCT_ID\", jsonData.id);"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            }
+                        ]
 					},
 					"response": []
 				}
@@ -143,6 +240,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
 							}
 						],
 						"body": {
@@ -161,7 +262,19 @@
 								"purchase-orders",
 								"create"
 							]
-						}
+						},
+                        "event": [
+                            {
+                                "listen": "test",
+                                "script": {
+                                    "exec": [
+                                        "var jsonData = pm.response.json();",
+                                        "pm.environment.set(\"PURCHASE_ORDER_ID\", jsonData.id);"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            }
+                        ]
 					},
 					"response": []
 				},
@@ -173,6 +286,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
 							}
 						],
 						"body": {
@@ -205,6 +322,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
 							}
 						],
 						"body": {
@@ -242,6 +363,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
 							}
 						],
 						"body": {
@@ -260,7 +385,19 @@
 								"carriers",
 								"add"
 							]
-						}
+						},
+                        "event": [
+                            {
+                                "listen": "test",
+                                "script": {
+                                    "exec": [
+                                        "var jsonData = pm.response.json();",
+                                        "pm.environment.set(\"CARRIER_ID\", jsonData.id);"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            }
+                        ]
 					},
 					"response": []
 				}
@@ -270,7 +407,20 @@
 			"name": "PHASE 3: Sales Order Management",
 			"item": [
 				{
-					"name": "Step 8: Create Client",
+					"name": "Step 8: Register Client",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"CLIENT_ID\", jsonData.user.id);",
+									"console.log(\"Client ID:\", jsonData.user.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -307,6 +457,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
 							}
 						],
 						"body": {
@@ -325,7 +479,19 @@
 								"sales-orders",
 								"create"
 							]
-						}
+						},
+                        "event": [
+                            {
+                                "listen": "test",
+                                "script": {
+                                    "exec": [
+                                        "var jsonData = pm.response.json();",
+                                        "pm.environment.set(\"SALES_ORDER_ID\", jsonData.id);"
+                                    ],
+                                    "type": "text/javascript"
+                                }
+                            }
+                        ]
 					},
 					"response": []
 				},
@@ -333,7 +499,12 @@
 					"name": "Step 10: Reserve Sales Order",
 					"request": {
 						"method": "PUT",
-						"header": [],
+						"header": [
+                            {
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+                        ],
 						"url": {
 							"raw": "http://localhost:8080/api/sales-orders/{{SALES_ORDER_ID}}/reserve",
 							"protocol": "http",
@@ -359,6 +530,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
 							}
 						],
 						"body": {
@@ -386,7 +561,12 @@
 					"name": "Step 12: Deliver Sales Order",
 					"request": {
 						"method": "PUT",
-						"header": [],
+						"header": [
+                            {
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+                        ],
 						"url": {
 							"raw": "http://localhost:8080/api/sales-orders/{{SALES_ORDER_ID}}/deliver",
 							"protocol": "http",
@@ -413,9 +593,14 @@
 					"name": "Get All Warehouses",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+                            {
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+                        ],
 						"url": {
-							"raw": "http://localhost:8080/api/warehouses/all",
+							"raw": "http://localhost:8080/api/warehouses",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -423,8 +608,7 @@
 							"port": "8080",
 							"path": [
 								"api",
-								"warehouses",
-								"all"
+								"warehouses"
 							]
 						}
 					},
@@ -434,7 +618,12 @@
 					"name": "Get Warehouse by Code",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+                            {
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+                        ],
 						"url": {
 							"raw": "http://localhost:8080/api/warehouses/{{WAREHOUSE_CODE}}",
 							"protocol": "http",
@@ -455,7 +644,12 @@
 					"name": "Get All Purchase Orders",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+                            {
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+                        ],
 						"url": {
 							"raw": "http://localhost:8080/api/purchase-orders/all",
 							"protocol": "http",
@@ -476,7 +670,12 @@
 					"name": "Get Purchase Order by ID",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+                            {
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+                        ],
 						"url": {
 							"raw": "http://localhost:8080/api/purchase-orders/{{PURCHASE_ORDER_ID}}",
 							"protocol": "http",
@@ -497,7 +696,12 @@
 					"name": "Get All Sales Orders",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+                            {
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+                        ],
 						"url": {
 							"raw": "http://localhost:8080/api/sales-orders/all",
 							"protocol": "http",
@@ -518,7 +722,12 @@
 					"name": "Get Sales Order by ID",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+                            {
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+                        ],
 						"url": {
 							"raw": "http://localhost:8080/api/sales-orders/{{SALES_ORDER_ID}}",
 							"protocol": "http",
@@ -539,9 +748,14 @@
 					"name": "Get All Products",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+                            {
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+                        ],
 						"url": {
-							"raw": "http://localhost:8080/api/products/all",
+							"raw": "http://localhost:8080/api/products",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -549,8 +763,7 @@
 							"port": "8080",
 							"path": [
 								"api",
-								"products",
-								"all"
+								"products"
 							]
 						}
 					},
@@ -560,9 +773,14 @@
 					"name": "Get All Suppliers",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+                            {
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+                        ],
 						"url": {
-							"raw": "http://localhost:8080/api/suppliers/all",
+							"raw": "http://localhost:8080/api/suppliers",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -570,8 +788,7 @@
 							"port": "8080",
 							"path": [
 								"api",
-								"suppliers",
-								"all"
+								"suppliers"
 							]
 						}
 					},
@@ -586,7 +803,12 @@
 					"name": "Error: Ship without Reserve",
 					"request": {
 						"method": "PUT",
-						"header": [],
+						"header": [
+                            {
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+                        ],
 						"url": {
 							"raw": "http://localhost:8080/api/sales-orders/{{INVALID_SO_ID}}/ship",
 							"protocol": "http",
@@ -608,7 +830,12 @@
 					"name": "Error: Deliver without Ship",
 					"request": {
 						"method": "PUT",
-						"header": [],
+						"header": [
+                            {
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+                        ],
 						"url": {
 							"raw": "http://localhost:8080/api/sales-orders/{{INVALID_SO_ID}}/deliver",
 							"protocol": "http",
@@ -630,7 +857,12 @@
 					"name": "Error: Insufficient Inventory",
 					"request": {
 						"method": "PUT",
-						"header": [],
+						"header": [
+                            {
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+                        ],
 						"url": {
 							"raw": "http://localhost:8080/api/sales-orders/{{SALES_ORDER_ID}}/reserve",
 							"protocol": "http",
@@ -656,6 +888,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
 							}
 						],
 						"body": {
@@ -684,6 +920,10 @@
 		}
 	],
 	"variable": [
+		{
+			"key": "ADMIN_TOKEN",
+			"value": ""
+		},
 		{
 			"key": "WAREHOUSE_MANAGER_ID",
 			"value": ""
